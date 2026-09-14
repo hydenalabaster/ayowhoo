@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070a0c">
+  <meta name="description" content="Ayowhoo is a UK crew labour-exchange ledger for finding work, building teams, and tracking Credits.">
+  <title>Ayowhoo · UK Crew Ledger</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            ink: "#070a0c",
+            panel: "#101619",
+            line: "#2c383c",
+            mist: "#a4afb1",
+            bone: "#f4f5f1",
+            signal: "#ffa394",
+            danger: "#ff4f70"
+          },
+          boxShadow: {
+            signal: "0 0 32px rgba(255,163,148,.2)",
+            panel: "0 18px 55px rgba(0,0,0,.34)"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #070a0c;
+      --panel: #101619;
+      --line: #2c383c;
+      --mist: #a4afb1;
+      --bone: #f4f5f1;
+      --signal: #ffa394;
+      --danger: #ff4f70;
+    }
+
+    * { -webkit-tap-highlight-color: transparent; }
+
+    html {
+      min-height: 100%;
+      background: #030506;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100%;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(255,163,148,.09), transparent 30rem),
+        linear-gradient(180deg, #040506 0%, #090b0d 100%);
+      color: var(--bone);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      pointer-events: none;
+      opacity: .2;
+      background-image:
+        repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,.018) 4px),
+        radial-gradient(circle at 18% 24%, rgba(255,255,255,.05) 0 1px, transparent 1.5px);
+      background-size: auto, 18px 18px;
+    }
+
+    button, input, textarea { font: inherit; }
+
+    button, a, input, textarea {
+      outline: none;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--signal);
+    }
+
+    .app-shell {
+      position: relative;
+      width: 100%;
+      min-height: 100dvh;
+      margin: 0 auto;
+      background: rgba(7,10,12,.88);
+    }
+
+    @media (min-width: 520px) {
+      .app-shell {
+        max-width: 480px;
+        min-height: calc(100dvh - 32px);
+        margin: 16px auto;
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 30px;
+        overflow: clip;
+        box-shadow: 0 32px 90px rgba(0,0,0,.62);
+      }
+    }
+
+    .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
+
+    .app-header {
+      padding-bottom: 12px;
+      transition: box-shadow 80ms linear;
+    }
+
+    .title-logo-wrap {
+      justify-content: flex-start;
+    }
+
+    .title-logo-image {
+      width: min(450px, 100%);
+      height: auto;
+      margin-left: 0;
+      transform: none;
+      transition: width 80ms linear;
+    }
+
+    .app-header.is-scrolled {
+      box-shadow: 0 12px 32px rgba(0,0,0,.32);
+    }
+
+    .app-header.is-scrolled .title-logo-image {
+      width: 150px;
+    }
+
+    .compact-header-balance {
+      position: absolute;
+      z-index: 2;
+      top: calc(max(12px, env(safe-area-inset-top)) + 24px);
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-50%);
+      pointer-events: none;
+      transition: opacity 100ms linear, visibility 0s linear 100ms;
+    }
+
+    .app-header.is-scrolled .compact-header-balance {
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .compact-header-balance-label {
+      color: #f2eee8;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .compact-header-balance-value {
+      margin-top: 4px;
+      color: #43dcc8;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      line-height: 1;
+    }
+
+    .screen-scroll {
+      min-height: calc(100dvh - 72px);
+      padding-bottom: calc(116px + env(safe-area-inset-bottom));
+    }
+
+    .bottom-nav {
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    .panel {
+      background: linear-gradient(145deg, rgba(22,30,33,.96), rgba(10,14,16,.96));
+      border: 1px solid rgba(164,175,177,.14);
+      box-shadow: 0 16px 45px rgba(0,0,0,.24);
+    }
+
+    .hairline { border-color: rgba(164,175,177,.14); }
+
+    .balance-grid {
+      background-image:
+        linear-gradient(rgba(255,163,148,.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,163,148,.045) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    .balance-card-accent {
+      --balance-accent-rgb: 67, 220, 200;
+      border-color: rgba(var(--balance-accent-rgb),.42);
+      box-shadow:
+        0 0 0 1px rgba(var(--balance-accent-rgb),.1),
+        0 0 24px rgba(var(--balance-accent-rgb),.38),
+        0 0 64px rgba(var(--balance-accent-rgb),.26);
+    }
+
+    .balance-card-accent.is-negative {
+      --balance-accent-rgb: 250, 159, 145;
+    }
+
+    .balance-card-tone {
+      color: rgb(var(--balance-accent-rgb));
+    }
+
+    .balance-card-halo {
+      background-color: rgba(var(--balance-accent-rgb),.2);
+    }
+
+    .balance-teal { color: #43dcc8; }
+
+    .availability-badge {
+      --availability-rgb: 67, 220, 200;
+      color: rgb(var(--availability-rgb));
+      border-color: rgba(var(--availability-rgb),.28);
+      background: rgba(var(--availability-rgb),.08);
+    }
+
+    .availability-badge.is-unavailable {
+      --availability-rgb: 250, 159, 145;
+    }
+
+    .availability-dot {
+      background: rgb(var(--availability-rgb));
+      box-shadow: 0 0 10px rgba(var(--availability-rgb),.9);
+    }
+
+    .tabular { font-variant-numeric: tabular-nums; }
+
+    .eyebrow {
+      font-size: .66rem;
+      line-height: 1;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .nav-button[aria-selected="true"] { color: var(--signal); }
+    .nav-button[aria-selected="true"] .nav-icon {
+      background: rgba(255,163,148,.12);
+      border-color: rgba(255,163,148,.3);
+      box-shadow: 0 0 20px rgba(255,163,148,.14);
+    }
+
+    .choice-row:has(input:checked) {
+      border-color: rgba(255,163,148,.38);
+      background: rgba(255,163,148,.08);
+    }
+
+    .choice-row:has(input:checked) .choice-check {
+      border-color: var(--signal);
+      background: var(--signal);
+      color: #21100d;
+    }
+
+    .timeline-item::before {
+      position: absolute;
+      left: 15px;
+      top: 34px;
+      bottom: -16px;
+      width: 1px;
+      content: "";
+      background: rgba(164,175,177,.16);
+    }
+
+    .timeline-item:last-child::before { display: none; }
+
+    .ledger-penalty {
+      background: linear-gradient(90deg, rgba(255,163,148,.09), transparent 62%);
+      border-color: rgba(255,163,148,.28);
+    }
+
+    .scrollbar-none { scrollbar-width: none; }
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+
+    .role-panel {
+      transform-origin: top;
+      animation: unfold .18s ease-out;
+    }
+
+    .toast-show { animation: toast-in .26s ease-out both; }
+
+    .skeleton::after {
+      position: absolute;
+      inset: 0;
+      content: "";
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+      animation: shimmer 1.2s infinite;
+    }
+
+    @keyframes unfold {
+      from { opacity: 0; transform: translateY(-5px) scale(.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toast-in {
+      from { opacity: 0; transform: translate(-50%, 10px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    @keyframes shimmer { to { transform: translateX(100%); } }
+
+    .touch-logo-motion .app-header {
+      background-color: #070a0c !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      transition: none;
+    }
+
+    .touch-logo-motion .title-logo-image {
+      transform-origin: left top;
+      will-change: transform;
+      transition: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#main-content" class="fixed left-3 top-3 z-[80] -translate-y-24 rounded-full bg-signal px-4 py-2 text-sm font-bold text-ink focus:translate-y-0">Skip to content</a>
+
+  <div id="app" class="app-shell">
+    <header id="app-header" class="app-header safe-top sticky top-0 z-40 border-b hairline bg-ink/90 px-3 backdrop-blur-xl">
+      <div class="flex flex-col items-center">
+        <div class="title-logo-wrap flex min-h-11 w-full items-center">
+          <img
+            src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCA1MDAgMTYwIj4KICA8IS0tIEdlbmVyYXRvcjogQWRvYmUgSWxsdXN0cmF0b3IgMjkuMS4wLCBTVkcgRXhwb3J0IFBsdWctSW4gLiBTVkcgVmVyc2lvbjogMi4xLjAgQnVpbGQgMTQyKSAgLS0+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5zdDAgewogICAgICAgIGZpbGw6ICNmYTlmOTE7CiAgICAgIH0KCiAgICAgIC5zdDEgewogICAgICAgIGZpbGw6ICM0M2RjYzg7CiAgICAgIH0KCiAgICAgIC5zdDIgewogICAgICAgIGZpbGw6ICM0M2RjYzg7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxnPgogICAgPHBhdGggY2xhc3M9InN0MCIgZD0iTTY4Ljc0LDQ5LjgyYy0uMTUtMS42NC0xLjUyLTIuODktMy4xNi0yLjg5aC0xMy45N2MtMS4xLDAtMi4xNi41Ni0yLjc1LDEuNDlMMTEuNCwxMDguMjdjLS42Mi45Ny0uNjUsMi4yMi0uMDksMy4yMy41NiwxLjAxLDEuNjIsMS42NCwyLjc4LDEuNjRoMTQuNWMxLjEsMCwyLjExLS41NiwyLjY5LTEuNDlsMy44My02LjEzaDE3Ljg2bC40MSw0LjcyYy4xNSwxLjY0LDEuNTEsMi45LDMuMTYsMi45aDE0LjVjLjksMCwxLjc1LS4zOCwyLjM0LTEuMDMuNjEtLjY2LjktMS41NS44Mi0yLjQzbC01LjQ2LTU5Ljg1aC4wMS0uMDFaTTQ3Ljg2LDg1LjE4bDIuOTQtNC43LjQxLDQuN2gtMy4zNVoiLz4KICAgIDxwYXRoIGQ9Ik02NS42Miw1MC4xMWgtLjAycy0xNC4wMy0uMDEtMTQuMDMtLjAxTDE0LjEsMTA5Ljk2aDE0LjVsNC43Ny03LjYyaDIyLjU0bC42Nyw3LjYyaDE0LjVsLTUuNDYtNTkuODVaTTQyLjEzLDg4LjM2bDExLjAyLTE3LjU5LDEuNTUsMTcuNTloLTEyLjU3WiIvPgogICAgPHBvbHlnb24gY2xhc3M9InN0MSIgcG9pbnRzPSIyNC43MiAxMDcuNiAyMC45MiAxMDcuNiA1NS40NSA1Mi40NSA1OS4yNSA1Mi40NSAyNC43MiAxMDcuNiIvPgogICAgPHBvbHlnb24gY2xhc3M9InN0MSIgcG9pbnRzPSI1NS4xNiA5My40OSA1NS40NiA5Ny4yIDM2LjU5IDk3LjIgMzguOTMgOTMuNDkgNTUuMTYgOTMuNDkiLz4KICAgIDxwb2x5Z29uIGNsYXNzPSJzdDEiIHBvaW50cz0iNTguMDEgNjMuMDEgNjEuMTEgNTguMDYgNjUuNTEgMTA3LjU4IDYxLjcxIDEwNy41OCA1OCA2MyA1OCA2MyA1OC4wMSA2My4wMSIvPgogIDwvZz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0xMjUuNTgsNDYuOTNoLTE2LjI0Yy0uOTUsMC0xLjg1LjQzLTIuNDUsMS4xN2wtMTMuMywxNi4xOS00LjI2LTE1LjA0Yy0uMzktMS4zNy0xLjY0LTIuMzEtMy4wNi0yLjMxaC0xNi4yNmMtMSwwLTEuOTQuNDctMi41MywxLjI3LS42MS44LS44LDEuODMtLjUyLDIuNzhsMTAuMTQsMzUuNjYtNi4wMywyMi41Yy0uMjYuOTUtLjA2LDEuOTcuNTUsMi43NnMxLjU0LDEuMjQsMi41MiwxLjI0aDE0LjY0YzEuNDMsMCwyLjctLjk2LDMuMDctMi4zNWw1Ljc4LTIxLjU5LDMwLjQtMzcuMDZjLjc4LS45NS45NC0yLjI2LjQxLTMuMzdzLTEuNjUtMS44Mi0yLjg3LTEuODJoMHYtLjAyaC4wMVoiLz4KICAgIDxwb2x5Z29uIHBvaW50cz0iMTIzLjUzIDUwLjEgMTA5LjM0IDUwLjEgOTIuMTggNzAuOTkgODYuMjcgNTAuMSA3MC4wMSA1MC4xIDgwLjQgODYuNiA3NC4xNSAxMDkuOTUgODguNzkgMTA5Ljk1IDk0Ljc1IDg3LjY5IDEyNS41OCA1MC4xIDEyMy41MyA1MC4xIDEyMy41MyA1MC4xIDEyMy41MyA1MC4xIi8+CiAgICA8cGF0aCBjbGFzcz0ic3QxIiBkPSJNMTEzLjQ5LDUyLjQ2aDQuMDZsLTM4LjI3LDQ3LjA5LDIuMTYtOC4wOCwzMi4wNC0zOS4wMXMuMDEsMCwwLDBoMFoiLz4KICAgIDxwb2x5Z29uIGNsYXNzPSJzdDEiIHBvaW50cz0iNzYuNzkgNTIuNDYgODAuODUgNTIuNDYgODcuNzUgNzYuMzcgODQuNjYgODAuMTggNzYuNzkgNTIuNDYiLz4KICAgIDxwb2x5Z29uIGNsYXNzPSJzdDEiIHBvaW50cz0iODQuMjcgMTA3LjYgODAuNDcgMTA3LjYgODEuNDcgMTAzLjg5IDg3LjEgOTcuMDUgODQuMjggMTA3LjYgODQuMjggMTA3LjYgODQuMjcgMTA3LjYiLz4KICA8L2c+CiAgPGc+CiAgICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNNDIzLjA3LDU2LjE3Yy00LjYyLTYuMDItMTIuMDYtOS4zMy0yMC45NC05LjMzcy0xOC40MiwzLjQ2LTI2LjAyLDkuNzZjLTcuMSw1Ljg4LTEyLjMsMTMuOS0xNC42MiwyMi41Ni0yLjU2LDkuNTQtMS4yNywxOC4zLDMuNjMsMjQuNjksNC42Miw2LjAyLDEyLjA1LDkuMzMsMjAuOTMsOS4zMywxOC4yMywwLDM1LjctMTMuOTIsNDAuNjYtMzIuMzcsMi41NC05LjUxLDEuMjYtMTguMjUtMy42My0yNC42M2gtLjAxWk00MDYuNiw3OS4xNWMtMi4xNCw3Ljk4LTkuNCwxNC0xNi45LDE0aC0uMDFjLTMuMDksMC01LjUyLTEuMDMtNy4wMi0yLjk5LTEuNzMtMi4yNS0yLjEyLTUuNTctMS4xMS05LjM2LDEuMDktNC4wNiwzLjU1LTcuNzQsNi45NS0xMC4zNywzLjAzLTIuMzQsNi41Ny0zLjYzLDkuOTQtMy42MywzLjA5LDAsNS41MiwxLjAzLDcuMDMsMi45OSwxLjczLDIuMjUsMi4xMiw1LjU3LDEuMTEsOS4zNmguMDEsMFoiLz4KICAgIDxnPgogICAgICA8cGF0aCBkPSJNMzk5LjksNTguMzNoMGMtNS42LDAtMTEuMzcsMi4xMS0xNi4yNiw1LjkyLTUuMTcsNC4wMi04LjkxLDkuNjMtMTAuNTYsMTUuNzQtMy4zMSwxMi4zNSwzLjIyLDIxLjY1LDE1LjIxLDIxLjY1czIzLjUxLTkuMzEsMjYuODMtMjEuNjVjMy4zMS0xMi4zNS0zLjIzLTIxLjY1LTE1LjIxLTIxLjY1aC0uMDEsMFpNNDA5LjY4LDc5Ljk4Yy0yLjUsOS4zMi0xMS4wOCwxNi4zNS0xOS45NywxNi4zNXMtMTMuNzEtNy4wMy0xMS4yMS0xNi4zNWMxLjI3LTQuNzMsNC4xNC05LjAxLDguMDgtMTIuMDYsMy41OS0yLjc3LDcuOC00LjI5LDExLjg5LTQuMjksOC44OSwwLDEzLjcxLDcuMDMsMTEuMjEsMTYuMzVoMFoiLz4KICAgICAgPHBhdGggZD0iTTQwMi4xMiw1MC4wMWMtOC40NCwwLTE2Ljk2LDMuMi0yMy45OCw5LjAzLTYuNiw1LjQ3LTExLjQzLDEyLjktMTMuNTgsMjAuOTMtNC41OCwxNy4xMSw0LjY2LDMwLjAyLDIxLjQ5LDMwLjAyczMzLTEyLjkxLDM3LjU5LTMwLjAyYzQuNTctMTcuMDgtNC42Ny0yOS45Ny0yMS41Mi0yOS45N2gwWk00MTguMDYsODAuNzVjLTMuNjUsMTMuNjQtMTYuNDUsMjMuOTMtMjkuNzcsMjMuOTMtNi41MiwwLTEyLTIuNDUtMTUuNDMtNi45My0zLjctNC44MS00LjY3LTExLjQxLTIuNzUtMTguNTcsMS44Mi02Ljc3LDUuOTUtMTIuOTQsMTEuNjMtMTcuMzcsNS40Mi00LjIyLDExLjg3LTYuNTQsMTguMTQtNi41NmguMDJjNi41MiwwLDEyLDIuNDUsMTUuNDMsNi45MywzLjcsNC44MSw0LjY3LDExLjQxLDIuNzUsMTguNTdoLS4wMloiLz4KICAgIDwvZz4KICAgIDxwYXRoIGNsYXNzPSJzdDIiIGQ9Ik0zOTkuOSw1NS4yNWgtLjAyYy02LjI3LjAyLTEyLjcyLDIuMzQtMTguMTQsNi41Ni01LjY4LDQuNDMtOS44MSwxMC42LTExLjYzLDE3LjM3LTEuOTIsNy4xNi0uOTUsMTMuNzYsMi43NSwxOC41NywzLjQzLDQuNDgsOC45MSw2LjkzLDE1LjQzLDYuOTMsMTMuMzIsMCwyNi4xMi0xMC4yOSwyOS43Ny0yMy45M2guMDJjMS45Mi03LjE2Ljk1LTEzLjc2LTIuNzUtMTguNTctMy40My00LjQ4LTguOTEtNi45My0xNS40My02LjkzWk00MTUuMTIsNzkuOTljLTMuMzIsMTIuMzQtMTQuODQsMjEuNjUtMjYuODMsMjEuNjVzLTE4LjUyLTkuMy0xNS4yMS0yMS42NWMxLjY1LTYuMTEsNS4zOS0xMS43MiwxMC41Ni0xNS43NCw0Ljg5LTMuODEsMTAuNjYtNS45MiwxNi4yNi01LjkyaDBzLjAxLjAxLjAxLjAxYzExLjk4LDAsMTguNTIsOS4zLDE1LjIxLDIxLjY1WiIvPgogIDwvZz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0zMTcuOTksNDYuOTNoLTE0LjE1Yy0xLjE3LDAtMi4yMy42My0yLjc5LDEuNjVsLTEzLjEyLDIzLjk0LS4zNi0yMi40N2MtLjAyLTEuNzQtMS40NS0zLjEzLTMuMTctMy4xM2gtMTMuNzljLTEuMTcsMC0yLjIzLjYzLTIuNzksMS42NWwtMTMuMDksMjMuODgtLjM0LTIyLjRjLS4wMi0xLjc0LTEuNDUtMy4xMy0zLjE3LTMuMTNoLTE0LjIxYy0uODUsMC0xLjY3LjM0LTIuMjYuOTVzLS45MywxLjQyLS45MSwyLjI3bC45LDU5Ljg1Yy4wMiwxLjc0LDEuNDUsMy4xMywzLjE3LDMuMTNoMTMuODVjMS4xNSwwLDIuMjItLjYzLDIuNzgtMS42NWwxMy4xMS0yMy43OS4zMSwyMi4zYy4wMiwxLjc0LDEuNDMsMy4xMywzLjE3LDMuMTNoMTMuODFjMS4xNSwwLDIuMjctLjYzLDIuODItMS42NWwzMi45OS01OS44NWMuNTQtLjk5LjUzLTIuMTktLjA0LTMuMTVzLTEuNjEtMS41Ni0yLjczLTEuNTZoMGwuMDIuMDJoMFoiLz4KICAgIDxwb2x5Z29uIHBvaW50cz0iMzE1LjU5IDUwLjEgMzAzLjgzIDUwLjEgMjg0Ljk0IDg0LjU3IDI4NC4zOSA1MC4xIDI3MC42IDUwLjEgMjUxLjczIDg0LjU0IDI1MS4yMSA1MC4xIDIzNyA1MC4xIDIzNy45IDEwOS45NSAyNTEuNzUgMTA5Ljk1IDI3MC42NSA3NS42NiAyNzEuMTMgMTA5Ljk1IDI4NC45OCAxMDkuOTUgMzE3Ljk3IDUwLjEgMzE1LjU3IDUwLjEgMzE1LjU5IDUwLjEiLz4KICAgIDxwb2x5Z29uIGNsYXNzPSJzdDEiIHBvaW50cz0iMjQzLjA5IDEwNy42IDI0Mi4yNiA1Mi40NSAyNDYuMDQgNTIuNDUgMjQ2Ljg3IDEwNy42IDI0My4wOSAxMDcuNiIvPgogICAgPHBvbHlnb24gY2xhc3M9InN0MSIgcG9pbnRzPSIyNTEuOSA5My45MyAyNzQuNDcgNTIuNDYgMjc4LjI1IDUyLjQ2IDI1MS45NSAxMDAuMDggMjUxLjkxIDkzLjk0IDI1MS45IDkzLjk0IDI1MS45IDkzLjkzIi8+CiAgICA8cG9seWdvbiBjbGFzcz0ic3QxIiBwb2ludHM9IjI3Ni4zMyAxMDcuNiAyNzUuNzEgNjYuNDggMjc5LjM3IDU5LjkxIDI4MC4wOSAxMDUuNjMgMjc3LjQzIDEwNy41OSAyNzYuMzIgMTA3LjU5IDI3Ni4zMiAxMDcuNTkgMjc2LjMzIDEwNy42Ii8+CiAgICA8cG9seWdvbiBjbGFzcz0ic3QxIiBwb2ludHM9IjI4NS40OSA5Mi44OSAzMDcuNyA1Mi40NiAzMTEuNDggNTIuNDYgMjg1LjE4IDEwMC4zMSAyODUuNDkgOTIuODkiLz4KICA8L2c+CiAgPGc+CiAgICA8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMzY4LjYzLDQ2LjkzaC0xNC4wNmMtMS40MywwLTIuNy45Ni0zLjA3LDIuMzVsLTUuODIsMjEuNzNoLTEyLjNsNS4zOC0yMC4wOGMuMjYtLjk1LjA2LTEuOTctLjU1LTIuNzYtLjYxLS43OC0xLjU0LTEuMjQtMi41Mi0xLjI0aC0xNC4wNmMtMS40MywwLTIuNy45Ni0zLjA3LDIuMzVsLTE2LjA0LDU5Ljg1Yy0uMjYuOTUtLjA2LDEuOTcuNTUsMi43Ni42MS43OCwxLjU0LDEuMjQsMi41MiwxLjI0aDE0LjA2YzEuNDMsMCwyLjctLjk2LDMuMDctMi4zNWw1LjIxLTE5LjQ0aDEyLjNsLTQuNzYsMTcuOGMtLjI2Ljk1LS4wNiwxLjk3LjU1LDIuNzYuNjEuNzgsMS41NCwxLjI0LDIuNTIsMS4yNGgxNC4wNmMxLjQzLDAsMi43LS45NiwzLjA3LTIuMzVsMTYuMDQtNTkuODVjLjI2LS45NS4wNi0xLjk3LS41NS0yLjc2LS42MS0uNzgtMS41NC0xLjI0LTIuNTItMS4yNGgtLjAxLDBaIi8+CiAgICA8cG9seWdvbiBwb2ludHM9IjM2Ni4yOCA1MC4xIDM1NC41NiA1MC4xIDM0OC4xMSA3NC4xOCAzMjkuMjMgNzQuMTggMzM1LjY4IDUwLjEgMzIxLjYyIDUwLjEgMzA1LjU4IDEwOS45NSAzMTkuNjQgMTA5Ljk1IDMyNS40OCA4OC4xNSAzNDQuMzYgODguMTUgMzM4LjUyIDEwOS45NSAzNTIuNTggMTA5Ljk1IDM2OC42MiA1MC4xIDM2Ni4yNyA1MC4xIDM2Ni4yOCA1MC4xIi8+CiAgICA8cG9seWdvbiBjbGFzcz0ic3QxIiBwb2ludHM9IjMxNS4xMyAxMDcuNiAzMTEuMzMgMTA3LjYgMzI2LjExIDUyLjQ1IDMyOS45MSA1Mi40NSAzMTUuMTMgMTA3LjYiLz4KICAgIDxwb2x5Z29uIGNsYXNzPSJzdDEiIHBvaW50cz0iMzQ1LjczIDgzLjAzIDMyNi44NSA4My4wMyAzMjcuODYgNzkuMzIgMzQ2Ljc0IDc5LjMyIDM0NS43MyA4My4wMyIvPgogICAgPHBvbHlnb24gY2xhc3M9InN0MSIgcG9pbnRzPSIzNDguMDkgMTA3LjYgMzQ0LjI5IDEwNy42IDM1OS4wNyA1Mi40NSAzNjIuODcgNTIuNDUgMzQ4LjA5IDEwNy42Ii8+CiAgPC9nPgogIDxnPgogICAgPGc+CiAgICAgIDxwb2x5Z29uIGNsYXNzPSJzdDAiIHBvaW50cz0iMTg4LjY0IDE2LjgzIDE4OC42NSAxNi44MyAxODguNjUgMTYuODMgMTg4LjY0IDE2LjgzIi8+CiAgICAgIDxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik0yMjguMDEsMzQuMjZoMGMtOC42Mi0xMS4yNC0yMi42LTE3LjQzLTM5LjM2LTE3LjQzLTE3LjYyLDAtMzUuMzgsNi42OC01MC4wMSwxOC43OS0xMy43MSwxMS4zNC0yMy43MiwyNi43OS0yOC4yMSw0My40OS00Ljg1LDE4LjA5LTIuNDUsMzQuNjUsNi43Miw0Ni42Miw4LjYyLDExLjIzLDIyLjU5LDE3LjQxLDM5LjM1LDE3LjQxLDM1LjA4LDAsNjguNzEtMjYuODIsNzguMjMtNjIuMzksNC44My0xOC4wNCwyLjQ0LTM0LjU2LTYuNzItNDYuNTF2LjAyaDBaTTE5OC40Myw3OS4xMmMtMS45Niw3LjMxLTYuMjYsMTMuOS0xMi4xMSwxOC41OC02LjExLDQuODctMTMuNjksNy41Ni0yMS4zNSw3LjU2aDBjLTcuMzIsMC0xMy4xMi0yLjQ3LTE2LjMzLTYuOTQtMy4wOS00LjMtMy43NS0xMC41NS0xLjg3LTE3LjU2LDEuOTEtNy4xMiw2LjAxLTEzLjU2LDExLjUzLTE4LjE0LDYuMTUtNS4wOSwxMy45My03LjksMjEuOTEtNy45LDcuMzMsMCwxMy4xMywyLjQ1LDE2LjM1LDYuOTMsMy4wOCw0LjI5LDMuNzQsMTAuNDksMS44OCwxNy40N2gtLjAxWiIvPgogICAgPC9nPgogICAgPGc+CiAgICAgIDxwYXRoIGQ9Ik0xODguNjUsMjAuMDFoMGMtMTYuODgsMC0zMy45Miw2LjQyLTQ3Ljk5LDE4LjA2LTEzLjIxLDEwLjkzLTIyLjg1LDI1LjgtMjcuMTYsNDEuODctOS4xNywzNC4yMiw5LjMxLDYwLjAzLDQzLDYwLjAzczY1Ljk5LTI1LjgxLDc1LjE3LTYwLjAzYzkuMTYtMzQuMTctOS4zNS01OS45My00My4wMi01OS45M2gwWk0yMTguNDksODAuMTZjLTMuNDIsMTIuNzQtMTEuMTEsMjQuNC0yMS42NiwzMi44M2gwYy0xMC42OSw4LjUzLTIzLjYyLDEzLjIyLTM2LjQzLDEzLjIycy0yMy40LTQuNzYtMjkuNTgtMTMuMzljLTYuMTEtOC41My03LjU4LTIwLjI3LTQuMTUtMzMuMDgsMy4zNy0xMi41NiwxMC41Mi0yMy42NiwyMC42OS0zMi4wNywxMC44LTguOTUsMjQuMDgtMTMuODgsMzcuMzgtMTMuODhzMjMuMzIsNC42MywyOS42LDEzLjM3YzYuMTEsOC40OSw3LjU4LDIwLjIyLDQuMTYsMzNoMFoiLz4KICAgICAgPHBhdGggZD0iTTIxMC45Nyw0OS44M2wtLjI4LS40Yy01LjYxLTcuNS0xNS4wMy0xMS42Mi0yNi41OS0xMS42MnMtMjQuNzEsNC42Ni0zNC41MywxMi44Yy05LjIyLDcuNjMtMTUuOTksMTguMTMtMTkuMDUsMjkuNTYtMy4xMywxMS42OS0xLjgzLDIyLjM2LDMuNjYsMzAuMDEsNS41Niw3Ljc3LDE1LjExLDEyLjA1LDI2Ljg3LDEyLjA1czIzLjc5LTQuMzQsMzMuNjQtMTIuMmM5LjcyLTcuNzQsMTYuOC0xOC40OSwxOS45NS0zMC4yNiwzLjEzLTExLjY3LDEuODItMjIuMjktMy42OC0yOS45Mmgwdi0uMDJoMFpNMjAxLjQ3LDc5LjkzYy0yLjEzLDcuOTYtNi44MiwxNS4xNC0xMy4yLDIwLjI0aDBjLTYuNjcsNS4zMy0xNC45NSw4LjI3LTIzLjMzLDguMjdzLTE1LjA4LTIuOTQtMTguOS04LjI2Yy0zLjY1LTUuMS00LjQ5LTEyLjI4LTIuMzYtMjAuMjQsMi4wNy03Ljc1LDYuNTQtMTQuNzcsMTIuNTctMTkuNzcsNi43MS01LjU2LDE1LjIyLTguNjMsMjMuOTMtOC42M3MxNS4xMSwyLjkyLDE4LjkzLDguMjVjMy42NCw1LjA4LDQuNDgsMTIuMjMsMi4zNiwyMC4xNGgwWiIvPgogICAgPC9nPgogICAgPHBhdGggY2xhc3M9InN0MiIgZD0iTTE4NC43NCwzMy43OWMtMTMuMywwLTI2LjU4LDQuOTMtMzcuMzgsMTMuODgtMTAuMTcsOC40MS0xNy4zMiwxOS41MS0yMC42OSwzMi4wNy0zLjQzLDEyLjgxLTEuOTYsMjQuNTUsNC4xNSwzMy4wOCw2LjE4LDguNjMsMTYuNzcsMTMuMzksMjkuNTgsMTMuMzlzMjUuNzQtNC42OSwzNi40My0xMy4yMmMxMC41NS04LjQzLDE4LjI0LTIwLjA5LDIxLjY2LTMyLjgzaC4wMWMzLjQyLTEyLjc4LDEuOTUtMjQuNTEtNC4xNi0zMy02LjI4LTguNzQtMTYuMy0xMy4zNy0yOS42LTEzLjM3Wk0yMTQuNjQsNzkuNzdjLTMuMTUsMTEuNzctMTAuMjMsMjIuNTItMTkuOTUsMzAuMjYtOS44NSw3Ljg2LTIxLjg4LDEyLjItMzMuNjQsMTIuMnMtMjEuMzEtNC4yOC0yNi44Ny0xMi4wNWMtNS40OS03LjY1LTYuNzktMTguMzItMy42Ni0zMC4wMSwzLjA2LTExLjQzLDkuODMtMjEuOTMsMTkuMDUtMjkuNTYsOS44Mi04LjE0LDIyLjk3LTEyLjgsMzQuNTMtMTIuOHMyMC45OCw0LjEyLDI2LjU5LDExLjYybC4yOC40aC0uMDF2LjAyYzUuNSw3LjYzLDYuODEsMTguMjUsMy42OCwyOS45MloiLz4KICA8L2c+CiAgPHBvbHlnb24gY2xhc3M9InN0MiIgcG9pbnRzPSI4Ni4wOCAtODYuNTEgODYuMDkgLTg2LjUxIDg2LjA5IC04Ni41MSA4Ni4wOCAtODYuNTEiLz4KICA8Zz4KICAgIDxwYXRoIGNsYXNzPSJzdDAiIGQ9Ik00ODUuOTYsNTYuMTdjLTQuNjItNi4wMi0xMi4wNi05LjMzLTIwLjk0LTkuMzNzLTE4LjQyLDMuNDYtMjYuMDIsOS43NmMtNy4xLDUuODgtMTIuMywxMy45LTE0LjYyLDIyLjU2LTIuNTYsOS41NC0xLjI3LDE4LjMsMy42MywyNC42OSw0LjYyLDYuMDIsMTIuMDUsOS4zMywyMC45Myw5LjMzLDE4LjIzLDAsMzUuNy0xMy45Miw0MC42Ni0zMi4zNywyLjU0LTkuNTEsMS4yNi0xOC4yNS0zLjYzLTI0LjYzaC0uMDFaTTQ2OS40OSw3OS4xNWMtMi4xNCw3Ljk4LTkuNCwxNC0xNi45LDE0aC0uMDFjLTMuMDksMC01LjUyLTEuMDMtNy4wMi0yLjk5LTEuNzMtMi4yNS0yLjEyLTUuNTctMS4xMS05LjM2LDEuMDktNC4wNiwzLjU1LTcuNzQsNi45NS0xMC4zNywzLjAzLTIuMzQsNi41Ny0zLjYzLDkuOTQtMy42MywzLjA5LDAsNS41MiwxLjAzLDcuMDMsMi45OSwxLjczLDIuMjUsMi4xMiw1LjU3LDEuMTEsOS4zNmguMDEsMFoiLz4KICAgIDxnPgogICAgICA8cGF0aCBkPSJNNDYyLjc5LDU4LjMzaDBjLTUuNiwwLTExLjM3LDIuMTEtMTYuMjYsNS45Mi01LjE3LDQuMDItOC45MSw5LjYzLTEwLjU2LDE1Ljc0LTMuMzEsMTIuMzUsMy4yMiwyMS42NSwxNS4yMSwyMS42NXMyMy41MS05LjMxLDI2LjgzLTIxLjY1YzMuMzEtMTIuMzUtMy4yMy0yMS42NS0xNS4yMS0yMS42NWgtLjAxLDBaTTQ3Mi41Nyw3OS45OGMtMi41LDkuMzItMTEuMDgsMTYuMzUtMTkuOTcsMTYuMzVzLTEzLjcxLTcuMDMtMTEuMjEtMTYuMzVjMS4yNy00LjczLDQuMTQtOS4wMSw4LjA4LTEyLjA2LDMuNTktMi43Nyw3LjgtNC4yOSwxMS44OS00LjI5LDguODksMCwxMy43MSw3LjAzLDExLjIxLDE2LjM1aDBaIi8+CiAgICAgIDxwYXRoIGQ9Ik00NjUuMDEsNTAuMDFjLTguNDQsMC0xNi45NiwzLjItMjMuOTgsOS4wMy02LjYsNS40Ny0xMS40MywxMi45LTEzLjU4LDIwLjkzLTQuNTgsMTcuMTEsNC42NiwzMC4wMiwyMS40OSwzMC4wMnMzMy0xMi45MSwzNy41OS0zMC4wMmM0LjU3LTE3LjA4LTQuNjctMjkuOTctMjEuNTItMjkuOTdoMFpNNDgwLjk1LDgwLjc1Yy0zLjY1LDEzLjY0LTE2LjQ1LDIzLjkzLTI5Ljc3LDIzLjkzLTYuNTIsMC0xMi0yLjQ1LTE1LjQzLTYuOTMtMy43LTQuODEtNC42Ny0xMS40MS0yLjc1LTE4LjU3LDEuODItNi43Nyw1Ljk1LTEyLjk0LDExLjYzLTE3LjM3LDUuNDItNC4yMiwxMS44Ny02LjU0LDE4LjE0LTYuNTZoLjAyYzYuNTIsMCwxMiwyLjQ1LDE1LjQzLDYuOTMsMy43LDQuODEsNC42NywxMS40MSwyLjc1LDE4LjU3aC0uMDJaIi8+CiAgICA8L2c+CiAgICA8cGF0aCBjbGFzcz0ic3QyIiBkPSJNNDYyLjc5LDU1LjI1aC0uMDJjLTYuMjcuMDItMTIuNzIsMi4zNC0xOC4xNCw2LjU2LTUuNjgsNC40My05LjgxLDEwLjYtMTEuNjMsMTcuMzctMS45Miw3LjE2LS45NSwxMy43NiwyLjc1LDE4LjU3LDMuNDMsNC40OCw4LjkxLDYuOTMsMTUuNDMsNi45MywxMy4zMiwwLDI2LjEyLTEwLjI5LDI5Ljc3LTIzLjkzaC4wMmMxLjkyLTcuMTYuOTUtMTMuNzYtMi43NS0xOC41Ny0zLjQzLTQuNDgtOC45MS02LjkzLTE1LjQzLTYuOTNaTTQ3OC4wMSw3OS45OWMtMy4zMiwxMi4zNC0xNC44NCwyMS42NS0yNi44MywyMS42NXMtMTguNTItOS4zLTE1LjIxLTIxLjY1YzEuNjUtNi4xMSw1LjM5LTExLjcyLDEwLjU2LTE1Ljc0LDQuODktMy44MSwxMC42Ni01LjkyLDE2LjI2LTUuOTJoMHMuMDEuMDEuMDEuMDFjMTEuOTgsMCwxOC41Miw5LjMsMTUuMjEsMjEuNjVaIi8+CiAgPC9nPgo8L3N2Zz4="
+            alt="Ayowhoo"
+            width="500"
+            height="160"
+            class="title-logo-image max-w-full object-contain"
+          >
+        </div>
+
+        <p id="compact-header-balance" class="compact-header-balance tabular" role="status" aria-live="polite" aria-hidden="true" aria-label="Current balance: 505 Credits">
+          <span class="compact-header-balance-label">Balance</span>
+          <span id="compact-header-balance-value" class="compact-header-balance-value">505 Credits</span>
+        </p>
+
+      </div>
+    </header>
+
+    <main id="main-content" class="screen-scroll">
+      <section id="view-dashboard" data-view="dashboard" aria-labelledby="dashboard-title">
+        <div id="dashboard-content"></div>
+      </section>
+
+      <section id="view-work" data-view="work" aria-labelledby="work-title" hidden>
+        <div class="px-5 pb-4 pt-7">
+          <div class="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h1 id="work-title" tabindex="-1" class="text-[2rem] font-black leading-none tracking-[-.055em] text-bone">Find Work</h1>
+              <p class="mt-2 max-w-xs text-sm leading-5 text-mist">Open UK shoots matched to your craft.</p>
+            </div>
+            <div id="job-count" class="tabular rounded-full border hairline bg-white/[.035] px-3 py-1.5 text-xs font-bold text-bone">0 open</div>
+          </div>
+
+          <label class="relative block">
+            <span class="sr-only">Search title, role or city</span>
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-xs text-mist" aria-hidden="true"></i>
+            <input id="job-search" type="search" autocomplete="off" placeholder="Search title, role or city" class="h-12 w-full rounded-2xl border hairline bg-panel pl-11 pr-4 text-sm text-bone placeholder:text-mist/60 focus:border-signal/40">
+          </label>
+
+          <div id="department-filters" class="scrollbar-none -mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1" aria-label="Filter open calls by department"></div>
+        </div>
+
+        <div id="job-list" class="space-y-4 px-5"></div>
+      </section>
+
+      <section id="view-post" data-view="post" aria-labelledby="post-title" hidden>
+        <div class="px-5 pb-5 pt-7">
+          <h1 id="post-title" tabindex="-1" class="text-[2rem] font-black leading-none tracking-[-.055em] text-bone">Post a Shoot</h1>
+          <p class="mt-2 max-w-sm text-sm leading-5 text-mist">Build the crew. See the full Credits commitment before publishing.</p>
+        </div>
+
+        <form id="shoot-form" class="space-y-5 px-5 pb-2" novalidate>
+          <div id="form-message" role="alert" class="hidden rounded-2xl border px-4 py-3 text-sm leading-5"></div>
+
+          <div class="panel rounded-3xl p-4">
+            <div class="mb-5 flex items-center gap-3 border-b hairline pb-4">
+              <span class="grid h-9 w-9 place-items-center rounded-xl bg-white/[.045] text-signal"><i class="fa-solid fa-film" aria-hidden="true"></i></span>
+              <div>
+                <p class="text-sm font-extrabold text-bone">Project details</p>
+                <p class="text-xs text-mist">The essentials from the call sheet.</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <label class="block">
+                <span class="mb-2 block text-xs font-bold text-bone">Project title</span>
+                <input id="project-title" name="title" type="text" maxlength="70" autocomplete="off" placeholder="e.g. Rain on Glass" class="h-12 w-full rounded-2xl border hairline bg-black/25 px-4 text-sm text-bone placeholder:text-mist/50 focus:border-signal/40">
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-xs font-bold text-bone">Logline</span>
+                <textarea id="project-logline" name="logline" rows="3" maxlength="220" placeholder="Describe the story and production in a sentence." class="w-full resize-none rounded-2xl border hairline bg-black/25 px-4 py-3 text-sm leading-5 text-bone placeholder:text-mist/50 focus:border-signal/40"></textarea>
+              </label>
+
+              <label class="block">
+                <span class="mb-2 block text-xs font-bold text-bone">Location</span>
+                <input id="project-location" name="location" type="text" maxlength="60" autocomplete="address-level2" placeholder="City or region" class="h-12 w-full rounded-2xl border hairline bg-black/25 px-4 text-sm text-bone placeholder:text-mist/50 focus:border-signal/40">
+              </label>
+
+              <div class="grid grid-cols-2 gap-3">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-bold text-bone">First shoot day</span>
+                  <input id="project-start" name="start" type="date" min="2026-09-14" class="h-12 w-full rounded-2xl border hairline bg-black/25 px-3 text-[13px] text-bone focus:border-signal/40">
+                </label>
+                <label class="block">
+                  <span class="mb-2 block text-xs font-bold text-bone">Final shoot day</span>
+                  <input id="project-end" name="end" type="date" min="2026-09-14" class="h-12 w-full rounded-2xl border hairline bg-black/25 px-3 text-[13px] text-bone focus:border-signal/40">
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel rounded-3xl p-4">
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p class="text-sm font-extrabold text-bone">Crew positions</p>
+                <p class="mt-1 text-xs leading-4 text-mist">108 fixed roles across 20 departments. Select as many as needed.</p>
+              </div>
+              <button id="clear-roles" type="button" class="min-h-11 shrink-0 rounded-xl px-2 text-xs font-bold text-mist transition hover:text-signal">Clear</button>
+            </div>
+
+            <button id="role-trigger" type="button" class="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border hairline bg-black/25 px-4 text-left text-sm text-bone transition hover:border-signal/35" aria-expanded="false" aria-controls="role-panel">
+              <span id="role-trigger-label">Choose crew positions</span>
+              <i class="fa-solid fa-chevron-down text-xs text-mist transition-transform" aria-hidden="true"></i>
+            </button>
+
+            <div id="role-panel" class="role-panel mt-3 hidden overflow-hidden rounded-2xl border hairline bg-[#0c1012]" aria-label="Crew position selector">
+              <label class="relative block border-b hairline p-3">
+                <span class="sr-only">Search crew positions</span>
+                <i class="fa-solid fa-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-xs text-mist" aria-hidden="true"></i>
+                <input id="role-search" type="search" autocomplete="off" placeholder="Search roles or departments" class="h-10 w-full rounded-xl border hairline bg-white/[.035] pl-10 pr-3 text-sm text-bone placeholder:text-mist/55 focus:border-signal/40">
+              </label>
+              <div id="role-options" class="scrollbar-none max-h-[390px] overflow-y-auto p-2"></div>
+            </div>
+
+            <div id="selected-role-chips" class="mt-3 flex flex-wrap gap-2"></div>
+          </div>
+
+          <section class="balance-grid overflow-hidden rounded-3xl border border-signal/20 bg-[#17110f] p-4 shadow-signal" aria-labelledby="shoot-estimate-title">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p id="shoot-estimate-title" class="eyebrow mb-2 text-signal">Estimated Cost</p>
+                <p id="estimate-total" class="tabular text-2xl font-black tracking-[-.04em] text-bone">Estimated Cost: 0 Credits</p>
+                <p id="estimate-breakdown" class="mt-1 text-xs text-mist">Choose dates and crew positions.</p>
+              </div>
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-signal/20 bg-signal/10 text-signal"><i class="fa-solid fa-calculator" aria-hidden="true"></i></span>
+            </div>
+            <div class="my-4 h-px bg-white/[.07]"></div>
+            <div class="mb-3 flex items-center justify-between gap-3 text-xs">
+              <span class="text-mist">Your available balance</span>
+              <span id="estimate-balance" class="tabular font-extrabold text-signal">505 Credits</span>
+            </div>
+            <button id="post-submit" type="submit" class="min-h-12 w-full rounded-2xl bg-signal px-4 text-sm font-black text-[#21100d] shadow-signal transition hover:bg-[#ffb7ad] active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-45">
+              <i class="fa-solid fa-bullhorn mr-2" aria-hidden="true"></i>Post Shoot
+            </button>
+          </section>
+        </form>
+      </section>
+    </main>
+
+    <nav class="bottom-nav fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 border-t hairline bg-[#0a0d0f]/95 px-3 pt-2 backdrop-blur-2xl" aria-label="Primary navigation" role="tablist">
+      <div class="grid grid-cols-3 gap-1">
+        <button type="button" class="nav-button flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-2xl text-mist transition" data-nav="dashboard" role="tab" aria-selected="true" aria-controls="view-dashboard">
+          <span class="nav-icon grid h-8 w-10 place-items-center rounded-xl border border-transparent"><i class="fa-solid fa-house" aria-hidden="true"></i></span>
+          <span class="text-[10px] font-extrabold">Dashboard</span>
+        </button>
+        <button type="button" class="nav-button flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-2xl text-mist transition" data-nav="work" role="tab" aria-selected="false" aria-controls="view-work">
+          <span class="nav-icon grid h-8 w-10 place-items-center rounded-xl border border-transparent"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+          <span class="text-[10px] font-extrabold">Find Work</span>
+        </button>
+        <button type="button" class="nav-button flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-2xl text-mist transition" data-nav="post" role="tab" aria-selected="false" aria-controls="view-post">
+          <span class="nav-icon grid h-8 w-10 place-items-center rounded-xl border border-transparent"><i class="fa-solid fa-circle-plus" aria-hidden="true"></i></span>
+          <span class="text-[10px] font-extrabold">Post a Shoot</span>
+        </button>
+      </div>
+    </nav>
+
+    <div id="toast" class="pointer-events-none fixed bottom-[104px] left-1/2 z-[70] hidden w-[calc(100%_-_32px)] max-w-[440px] -translate-x-1/2 rounded-2xl border hairline bg-[#12181b]/95 px-4 py-3 text-sm font-semibold text-bone shadow-panel backdrop-blur-xl" role="status" aria-live="polite"></div>
+    <div id="live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const CREDIT_MATRIX = [
+      {
+        id: "above-the-line",
+        name: "Above-the-Line",
+        icon: "fa-star",
+        roles: [
+          { id: "lead-producer", name: "Lead Producer", rate: 80 },
+          { id: "associate-producer", name: "Associate Producer", rate: 40 },
+          { id: "director", name: "Director", rate: 80 },
+          { id: "lead-actor", name: "Lead Actor", rate: 80 },
+          { id: "supporting-actor", name: "Supporting Actor", rate: 60 }
+        ]
+      },
+      {
+        id: "art-dept",
+        name: "Art Dept",
+        icon: "fa-palette",
+        roles: [
+          { id: "production-designer", name: "Production Designer", rate: 70 },
+          { id: "art-director", name: "Art Director", rate: 45 },
+          { id: "assistant-art-director", name: "Assistant Art Director", rate: 25 },
+          { id: "standby-art-director", name: "Standby Art Director", rate: 35 },
+          { id: "scenic-carpenter", name: "Scenic Carpenter", rate: 25 },
+          { id: "scenic-painter", name: "Scenic Painter", rate: 25 },
+          { id: "art-dept-coordinator", name: "Art Dept Coordinator", rate: 25 },
+          { id: "graphic-designer", name: "Graphic Designer", rate: 25 },
+          { id: "assistant-graphic-designer", name: "Assistant Graphic Designer", rate: 20 },
+          { id: "draughtsperson", name: "Draughtsperson", rate: 22 },
+          { id: "art-dept-assistant", name: "Art Dept Assistant", rate: 18 },
+          { id: "concept-artist", name: "Concept Artist", rate: 30 }
+        ]
+      },
+      {
+        id: "assistant-directors",
+        name: "Assistant Directors",
+        icon: "fa-clipboard-list",
+        roles: [
+          { id: "first-ad", name: "1st AD", rate: 55 },
+          { id: "second-ad", name: "2nd AD", rate: 38 },
+          { id: "crowd-second-ad", name: "Crowd 2nd AD", rate: 34 },
+          { id: "third-ad", name: "3rd AD", rate: 26 },
+          { id: "pa", name: "PA", rate: 18 }
+        ]
+      },
+      {
+        id: "camera",
+        name: "Camera",
+        icon: "fa-video",
+        roles: [
+          { id: "dop", name: "DoP", rate: 80 },
+          { id: "camera-operator", name: "Camera Operator", rate: 55 },
+          { id: "steadicam-operator", name: "Steadicam Operator", rate: 75 },
+          { id: "focus-puller-first-ac", name: "Focus Puller / 1st AC", rate: 45 },
+          { id: "clapper-loader-second-ac", name: "Clapper Loader / 2nd AC", rate: 35 },
+          { id: "dit", name: "DIT", rate: 45 },
+          { id: "camera-trainee", name: "Camera Trainee", rate: 17 }
+        ]
+      },
+      {
+        id: "continuity",
+        name: "Continuity",
+        icon: "fa-book-open",
+        roles: [
+          { id: "script-supervisor", name: "Script Supervisor", rate: 45 }
+        ]
+      },
+      {
+        id: "costume",
+        name: "Costume",
+        icon: "fa-shirt",
+        roles: [
+          { id: "costume-designer", name: "Costume Designer", rate: 60 },
+          { id: "costume-supervisor", name: "Costume Supervisor", rate: 40 },
+          { id: "assistant-costume-designer", name: "Assistant Costume Designer", rate: 30 },
+          { id: "costume-coordinator", name: "Costume coordinator", rate: 28 },
+          { id: "costume-standby", name: "Costume Standby", rate: 30 },
+          { id: "costume-buyer", name: "Costume Buyer", rate: 25 },
+          { id: "costume-assistant", name: "Costume Assistant", rate: 24 },
+          { id: "costume-trainee", name: "Costume Trainee", rate: 15 },
+          { id: "costume-runner", name: "Costume Runner", rate: 13 }
+        ]
+      },
+      {
+        id: "editing",
+        name: "Editing",
+        icon: "fa-film",
+        roles: [
+          { id: "editor", name: "Editor", rate: 30 },
+          { id: "assistant-editor", name: "Assistant Editor", rate: 23 },
+          { id: "post-production-supervisor", name: "Post Production Supervisor", rate: 25 }
+        ]
+      },
+      {
+        id: "electrical",
+        name: "Electrical",
+        icon: "fa-bolt",
+        roles: [
+          { id: "gaffer", name: "Gaffer", rate: 60 },
+          { id: "best-boy-sparks", name: "Best Boy Sparks", rate: 45 },
+          { id: "lighting-technician", name: "Lighting Technician", rate: 35 },
+          { id: "practical-electrician", name: "Practical Electrician", rate: 35 },
+          { id: "console-operator", name: "Console Operator", rate: 40 },
+          { id: "genny-operator", name: "Genny Operator", rate: 38 },
+          { id: "rigging-technician-spark", name: "Rigging Technician / Spark", rate: 36 },
+          { id: "lighting-trainee", name: "Lighting Trainee", rate: 17 }
+        ]
+      },
+      {
+        id: "grips",
+        name: "Grips",
+        icon: "fa-hand-fist",
+        roles: [
+          { id: "key-grip", name: "Key Grip", rate: 55 },
+          { id: "best-boy-grip", name: "Best Boy Grip", rate: 48 },
+          { id: "grip", name: "Grip", rate: 45 },
+          { id: "grip-trainee", name: "Grip Trainee", rate: 16 }
+        ]
+      },
+      {
+        id: "hair-and-makeup",
+        name: "Hair and Makeup",
+        icon: "fa-wand-magic-sparkles",
+        roles: [
+          { id: "hmu-designer", name: "HMU Designer", rate: 44 },
+          { id: "hmu-assistant-designer", name: "HMU Assistant Designer", rate: 40 },
+          { id: "hmu-supervisor", name: "HMU Supervisor", rate: 38 },
+          { id: "hmu-artist", name: "HMU Artist", rate: 35 },
+          { id: "hmu-trainee", name: "HMU Trainee", rate: 16 },
+          { id: "prosthetics-artist", name: "Prosthetics Artist", rate: 42 },
+          { id: "prosthetics-trainee", name: "Prosthetics Trainee", rate: 16 }
+        ]
+      },
+      {
+        id: "intimacy",
+        name: "Intimacy",
+        icon: "fa-users",
+        roles: [
+          { id: "intimacy-coordinator", name: "Intimacy Coordinator", rate: 70 }
+        ]
+      },
+      {
+        id: "locations",
+        name: "Locations",
+        icon: "fa-location-dot",
+        roles: [
+          { id: "location-manager", name: "Location Manager", rate: 38 },
+          { id: "assistant-location-manager", name: "Assistant Location Manager", rate: 27 },
+          { id: "location-scout", name: "Location Scout", rate: 27 },
+          { id: "unit-manager", name: "Unit Manager", rate: 27 },
+          { id: "location-assistant", name: "Location Assistant", rate: 19 },
+          { id: "location-marshall", name: "Location Marshall", rate: 17 }
+        ]
+      },
+      {
+        id: "production",
+        name: "Production",
+        icon: "fa-briefcase",
+        roles: [
+          { id: "line-producer", name: "Line Producer", rate: 38 },
+          { id: "production-manager", name: "Production Manager", rate: 31 },
+          { id: "production-coordinator", name: "Production Coordinator", rate: 26 },
+          { id: "production-secretary", name: "Production Secretary", rate: 18 },
+          { id: "production-assistant-runner", name: "Production Assistant / Runner", rate: 15 }
+        ]
+      },
+      {
+        id: "props",
+        name: "Props",
+        icon: "fa-box-open",
+        roles: [
+          { id: "prop-master", name: "Prop Master", rate: 45 },
+          { id: "assistant-prop-master", name: "Assistant Prop Master", rate: 38 },
+          { id: "prop-storesperson", name: "Prop Storesperson", rate: 35 },
+          { id: "chargehand-dressing-props", name: "Chargehand Dressing Props", rate: 35 },
+          { id: "dressing-props-prop-hand", name: "Dressing Props / Prop Hand", rate: 30 },
+          { id: "standby-props", name: "Standby Props", rate: 32 },
+          { id: "dressing-standby-props-trainee", name: "Dressing / Standby Props Trainee", rate: 15 }
+        ]
+      },
+      {
+        id: "set-decoration",
+        name: "Set Decoration",
+        icon: "fa-couch",
+        roles: [
+          { id: "set-decorator", name: "Set Decorator", rate: 45 },
+          { id: "assistant-set-decorator", name: "Assistant Set Decorator", rate: 25 },
+          { id: "production-buyer", name: "Production Buyer", rate: 28 },
+          { id: "action-prop-buyer", name: "Action Prop Buyer", rate: 22 },
+          { id: "petty-cash-buyer", name: "Petty Cash Buyer", rate: 20 }
+        ]
+      },
+      {
+        id: "sfx",
+        name: "SFX",
+        icon: "fa-burst",
+        roles: [
+          { id: "sfx-supervisor", name: "SFX Supervisor", rate: 45 },
+          { id: "sfx-assistant-set-tech", name: "SFX Assistant / Set tech", rate: 30 }
+        ]
+      },
+      {
+        id: "sound",
+        name: "Sound",
+        icon: "fa-headphones",
+        roles: [
+          { id: "production-sound-mixer", name: "Production Sound Mixer", rate: 57 },
+          { id: "boom-op-first-as", name: "Boom Op / 1st AS", rate: 45 },
+          { id: "second-as", name: "2nd AS", rate: 35 },
+          { id: "third-as", name: "3rd AS", rate: 20 },
+          { id: "sound-trainee", name: "Sound Trainee", rate: 17 },
+          { id: "adr-recordist", name: "ADR Recordist", rate: 55 },
+          { id: "re-recording-mixer", name: "Re-recording Mixer", rate: 40 },
+          { id: "supervising-sound-editor", name: "Supervising Sound Editor", rate: 35 },
+          { id: "dialogue-editor", name: "Dialogue Editor", rate: 28 },
+          { id: "fx-editor-sound-designer", name: "FX Editor / Sound Designer", rate: 28 },
+          { id: "music-editor", name: "Music Editor", rate: 30 },
+          { id: "assistant-sound-editor", name: "Assistant Sound Editor", rate: 21 },
+          { id: "foley-artist-mixer", name: "Foley Artist / Mixer", rate: 26 }
+        ]
+      },
+      {
+        id: "stunts",
+        name: "Stunts",
+        icon: "fa-person-running",
+        roles: [
+          { id: "stunt-coordinator", name: "Stunt Coordinator", rate: 75 },
+          { id: "stunt-performer", name: "Stunt Performer", rate: 65 }
+        ]
+      },
+      {
+        id: "supporting-artists",
+        name: "Supporting Artists",
+        icon: "fa-people-group",
+        roles: [
+          { id: "background-performer", name: "Background Performer", rate: 13 },
+          { id: "stand-in", name: "Stand-in", rate: 13 }
+        ]
+      },
+      {
+        id: "vfx",
+        name: "VFX",
+        icon: "fa-wand-magic-sparkles",
+        roles: [
+          { id: "vfx-experience-1-3", name: "1-3 years experience", rate: 23 },
+          { id: "vfx-experience-4-6", name: "4-6 years experience", rate: 27 },
+          { id: "vfx-experience-7-9", name: "7-9 years experience", rate: 33 },
+          { id: "vfx-experience-10-plus", name: "10+ years experience", rate: 36 }
+        ]
+      }
+    ];
+
+    const ALL_ROLES = CREDIT_MATRIX.flatMap(department =>
+      department.roles.map(role => ({ ...role, departmentId: department.id, departmentName: department.name }))
+    );
+
+    const CREW_NAMES = ["Maya Clarke", "Jamie Wilson", "Priya Shah", "Ellis Morgan", "Amina Yusuf", "Theo Bennett", "Nia Roberts", "Callum Reid"];
+    const STORAGE_KEY = "ayowhoo-demo-v7";
+    const DAY_MS = 86400000;
+    const SAMPLE_PROFILE = Object.freeze({
+      id: "crew-mike-del-forno",
+      firstName: "Mike",
+      lastName: "del Forno",
+      name: "Mike del Forno",
+      initials: "MF",
+      location: "London",
+      department: "Props",
+      roleId: "prop-master"
+    });
+    const INITIAL_LEDGER = Object.freeze([
+      { id: "l-1", date: "2026-09-12T18:30:00Z", title: "Project Completed", detail: "Glass Harbour · Prop Master · 3 days", amount: 135, tone: "positive", workDays: 3 },
+      { id: "l-2", date: "2026-09-10T09:10:00Z", title: "Shoot Posted", detail: "Ash & Snow · Director · 1 day", amount: -80, tone: "standard", workDays: 0 },
+      { id: "l-3", date: "2026-09-09T16:40:00Z", title: "Credits Returned", detail: "Ash & Snow · Booking withdrawn with more than 48h notice", amount: 80, tone: "positive", workDays: 0 },
+      { id: "l-4", date: "2026-09-06T11:25:00Z", title: "Late Cancellation Awarded", detail: "Daymark · Prop Master · 2 days · 50% of 90 Credits received from creator", amount: 45, tone: "danger", workDays: 0 },
+      { id: "l-5", date: "2026-09-04T20:15:00Z", title: "Project Completed", detail: "Night Bus North · Prop Master · 2 days", amount: 90, tone: "positive", workDays: 2 },
+      { id: "l-6", date: "2026-08-31T13:00:00Z", title: "Late Cancellation Penalty", detail: "Low Tide · Clapper Loader / 2nd AC · 2 days · 50% of 70 Credits routed to booked crew", amount: -35, tone: "danger", workDays: 0 },
+      { id: "l-7", date: "2026-08-24T19:45:00Z", title: "Project Completed", detail: "The Quiet Stand · Prop Master · 3 days", amount: 135, tone: "positive", workDays: 3 },
+      { id: "l-8", date: "2026-08-12T10:40:00Z", title: "Project Completed", detail: "Hemline · Prop Master · 1 day", amount: 45, tone: "positive", workDays: 1 },
+      { id: "l-9", date: "2026-07-29T17:20:00Z", title: "Project Completed", detail: "Moorlight · Prop Master · 2 days", amount: 90, tone: "positive", workDays: 2 }
+    ]);
+    const INITIAL_BALANCE = INITIAL_LEDGER.reduce((sum, item) => sum + item.amount, 0);
+    const INITIAL_COMPLETED_DAYS = INITIAL_LEDGER.reduce((sum, item) => sum + item.workDays, 0);
+
+    function initialState() {
+      return {
+        profile: {
+          ...SAMPLE_PROFILE,
+          balance: INITIAL_BALANCE,
+          completedDays: INITIAL_COMPLETED_DAYS,
+          available: true
+        },
+        crewAccounts: {},
+        ledger: INITIAL_LEDGER.map(item => ({ ...item })),
+        jobs: [
+          {
+            id: "north-sea-static",
+            title: "North Sea Static",
+            company: "Tern House Films",
+            format: "Independent feature",
+            location: "Whitby",
+            start: "2026-09-18",
+            end: "2026-09-19",
+            roleId: "dop",
+            creator: { id: "creator-tern", name: "Tern House Films", balance: 260 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "last-signal",
+            title: "The Last Signal",
+            company: "Kelvin Frame",
+            format: "Short drama",
+            location: "Glasgow",
+            start: "2026-09-22",
+            end: "2026-09-22",
+            roleId: "production-sound-mixer",
+            creator: { id: "creator-kelvin", name: "Kelvin Frame", balance: 130 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "under-flyover",
+            title: "Under the Flyover",
+            company: "Mersey Unit",
+            format: "Music film",
+            location: "Manchester",
+            start: "2026-09-25",
+            end: "2026-09-25",
+            roleId: "gaffer",
+            creator: { id: "creator-mersey", name: "Mersey Unit", balance: 48 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "cardiff-after-rain",
+            title: "Cardiff After Rain",
+            company: "Red Brick Pictures",
+            format: "Limited series",
+            location: "Cardiff",
+            start: "2026-09-27",
+            end: "2026-09-28",
+            roleId: "script-supervisor",
+            creator: { id: "creator-red-brick", name: "Red Brick Pictures", balance: 180 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "belfast-bloom",
+            title: "Belfast Bloom",
+            company: "Lagan Light",
+            format: "Commercial short",
+            location: "Belfast",
+            start: "2026-10-01",
+            end: "2026-10-03",
+            roleId: "costume-assistant",
+            creator: { id: "creator-lagan", name: "Lagan Light", balance: 160 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "cut-between",
+            title: "The Cut Between",
+            company: "Temple Edit",
+            format: "Documentary",
+            location: "Bristol / Remote",
+            start: "2026-10-05",
+            end: "2026-10-07",
+            roleId: "assistant-editor",
+            creator: { id: "creator-temple", name: "Temple Edit", balance: 200 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          },
+          {
+            id: "tin-chapel",
+            title: "Tin Chapel",
+            company: "Tyne Storyworks",
+            format: "Period short",
+            location: "Newcastle",
+            start: "2026-10-09",
+            end: "2026-10-10",
+            roleId: "standby-props",
+            creator: { id: "creator-tyne", name: "Tyne Storyworks", balance: 145 },
+            status: "open",
+            applicationStatus: null,
+            reservedCredits: 0
+          }
+        ],
+        projects: []
+      };
+    }
+
+    let state = loadState();
+    let currentView = "dashboard";
+    let currentDepartment = "all";
+    let selectedRoles = new Set();
+    let busyAction = "";
+    let toastTimer = null;
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const savedCompletedDays = Number(parsed.profile?.completedDays);
+          const savedBalance = Number(parsed.profile?.balance);
+          let ledgerBalanceAdjustment = 0;
+          const migratedLedger = Array.isArray(parsed.ledger)
+            ? parsed.ledger.map(item => {
+                let migratedItem = item;
+                if (item.id === "l-6" && (item.amount !== -35 || !String(item.detail || "").includes("Clapper Loader / 2nd AC"))) {
+                  const previousAmount = Number(item.amount);
+                  migratedItem = {
+                    ...item,
+                    detail: "Low Tide · Clapper Loader / 2nd AC · 2 days · 50% of 70 Credits routed to booked crew",
+                    amount: -35
+                  };
+                  ledgerBalanceAdjustment += -35 - (Number.isFinite(previousAmount) ? previousAmount : 0);
+                }
+                const wasAwarded = migratedItem.title === "Late Cancellation Penalty" && /received from creator|routed from/i.test(String(migratedItem.detail || ""));
+                return wasAwarded ? { ...migratedItem, title: "Late Cancellation Awarded" } : migratedItem;
+              })
+            : INITIAL_LEDGER.map(item => ({ ...item }));
+          return {
+            ...parsed,
+            ledger: migratedLedger,
+            profile: {
+              ...parsed.profile,
+              ...SAMPLE_PROFILE,
+              balance: Number.isFinite(savedBalance) ? savedBalance + ledgerBalanceAdjustment : INITIAL_BALANCE,
+              completedDays: Number.isFinite(savedCompletedDays) ? savedCompletedDays : INITIAL_COMPLETED_DAYS
+            }
+          };
+        }
+      } catch (error) {
+        console.warn("Saved demo state could not be loaded.", error);
+      }
+      return initialState();
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function roleById(roleId) {
+      return ALL_ROLES.find(role => role.id === roleId);
+    }
+
+    function parseDateUtc(isoDate) {
+      if (!isoDate) return null;
+      const [year, month, day] = isoDate.split("-").map(Number);
+      if (!year || !month || !day) return null;
+      return Date.UTC(year, month - 1, day);
+    }
+
+    function inclusiveDays(start, end) {
+      const startUtc = parseDateUtc(start);
+      const endUtc = parseDateUtc(end);
+      if (startUtc === null || endUtc === null || endUtc < startUtc) return 0;
+      return Math.floor((endUtc - startUtc) / DAY_MS) + 1;
+    }
+
+    function numberText(value) {
+      return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+    }
+
+    function credits(value, perDay = false) {
+      return `${numberText(value)} Credits${perDay ? "/Day" : ""}`;
+    }
+
+    function signedCredits(value) {
+      if (value === 0) return "0 Credits";
+      return `${value > 0 ? "+" : "−"}${credits(Math.abs(value))}`;
+    }
+
+    function dateLabel(isoDate, options = { day: "numeric", month: "short" }) {
+      const time = parseDateUtc(isoDate.slice(0, 10));
+      return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(time));
+    }
+
+    function dateRange(start, end) {
+      if (start === end) return dateLabel(start, { day: "numeric", month: "short", year: "numeric" });
+      const startDate = dateLabel(start, { day: "numeric", month: "short" });
+      const endDate = dateLabel(end, { day: "numeric", month: "short", year: "numeric" });
+      return `${startDate}–${endDate}`;
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function uniqueId(prefix) {
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    }
+
+    function addLedger({ title, detail, amount, tone = "standard", workDays = 0 }) {
+      state.ledger.unshift({ id: uniqueId("ledger"), date: nowIso(), title, detail, amount, tone, workDays });
+    }
+
+    function projectRoleTotal(project, slot) {
+      return roleById(slot.roleId).rate * project.days;
+    }
+
+    function jobTotal(job) {
+      return roleById(job.roleId).rate * inclusiveDays(job.start, job.end);
+    }
+
+    function announce(message) {
+      const region = document.getElementById("live-region");
+      region.textContent = "";
+      requestAnimationFrame(() => { region.textContent = message; });
+    }
+
+    function showToast(message, type = "standard") {
+      const toast = document.getElementById("toast");
+      clearTimeout(toastTimer);
+      toast.className = `toast-show pointer-events-none fixed bottom-[104px] left-1/2 z-[70] w-[calc(100%_-_32px)] max-w-[440px] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-panel backdrop-blur-xl ${
+        type === "danger"
+          ? "border-danger/30 bg-[#211013]/95 text-[#ffdadd]"
+          : "border-signal/20 bg-[#12181b]/95 text-bone"
+      }`;
+      toast.innerHTML = `<span class="mr-2 ${type === "danger" ? "text-danger" : "text-signal"}"><i class="fa-solid ${type === "danger" ? "fa-triangle-exclamation" : "fa-circle-check"}" aria-hidden="true"></i></span>${escapeHtml(message)}`;
+      toast.hidden = false;
+      announce(message);
+      toastTimer = setTimeout(() => { toast.hidden = true; }, 3600);
+    }
+
+    const mockDatabase = {
+      async request(route, payload = {}) {
+        await new Promise(resolve => setTimeout(resolve, 180));
+        const segments = route.split("/").filter(Boolean);
+
+        if (segments[0] === "profile" && segments[1] === "availability") {
+          state.profile.available = Boolean(payload.available);
+          return { message: `Status set to ${state.profile.available ? "Available" : "Not Available"}.` };
+        }
+
+        if (segments[0] === "jobs") {
+          const job = state.jobs.find(item => item.id === segments[1]);
+          const action = segments[2];
+          if (!job) throw new Error("This open call could not be found.");
+
+          if (action === "apply") {
+            if (job.status !== "open") throw new Error("This shoot is no longer open.");
+            if (job.applicationStatus) throw new Error("Your application is already registered.");
+            job.applicationStatus = "applied";
+            return { message: `Application sent to ${job.title}.` };
+          }
+
+          if (action === "confirm") {
+            if (job.status !== "open" || job.applicationStatus !== "applied") throw new Error("Apply before confirming this crew slot.");
+            const total = jobTotal(job);
+            if (job.creator.balance < total) {
+              throw new Error(`${job.creator.name} has ${credits(job.creator.balance)} available; ${credits(total)} are required to confirm this crew slot.`);
+            }
+            job.creator.balance -= total;
+            job.reservedCredits = total;
+            job.applicationStatus = "confirmed";
+            return { message: `Crew slot confirmed. ${credits(total)} are now protected for completion.` };
+          }
+
+          if (action === "complete") {
+            if (job.status !== "open" || job.applicationStatus !== "confirmed") throw new Error("This crew slot must be confirmed first.");
+            const total = jobTotal(job);
+            const completedDays = inclusiveDays(job.start, job.end);
+            if (job.reservedCredits !== total) throw new Error("The protected Credits total does not match this booking.");
+            job.reservedCredits = 0;
+            job.status = "completed";
+            job.applicationStatus = "completed";
+            state.profile.balance += total;
+            state.profile.completedDays += completedDays;
+            addLedger({
+              title: "Project Completed",
+              detail: `${job.title} · ${roleById(job.roleId).name} · ${completedDays} ${completedDays === 1 ? "day" : "days"}`,
+              amount: total,
+              tone: "positive",
+              workDays: completedDays
+            });
+            return { message: `${job.title} completed. ${credits(total)} added to your balance.` };
+          }
+
+          if (action === "cancel") {
+            if (job.status === "cancelled") throw new Error("This late cancellation has already been routed.");
+            if (job.status === "completed") throw new Error("A completed shoot cannot be cancelled.");
+            const total = jobTotal(job);
+            const penalty = total / 2;
+
+            if (job.reservedCredits === total) {
+              job.creator.balance += total - penalty;
+              job.reservedCredits = 0;
+            } else {
+              if (job.creator.balance < penalty) throw new Error(`${job.creator.name} cannot cover the ${credits(penalty)} late cancellation route.`);
+              job.creator.balance -= penalty;
+            }
+
+            state.profile.balance += penalty;
+            job.status = "cancelled";
+            job.applicationStatus = "cancelled";
+            addLedger({
+              title: "Late Cancellation Awarded",
+              detail: `${job.title} · 50% of ${credits(total)} routed from ${job.creator.name}`,
+              amount: penalty,
+              tone: "danger"
+            });
+            return { message: `Late cancellation routed. ${credits(penalty)} moved from ${job.creator.name} to your crew account.` };
+          }
+        }
+
+        if (segments[0] === "projects" && segments.length === 1 && payload.action === "create") {
+          const total = payload.total;
+          if (total > state.profile.balance) {
+            throw new Error(`You need ${credits(total - state.profile.balance)} more to post this shoot.`);
+          }
+
+          state.profile.balance -= total;
+          const project = {
+            id: uniqueId("project"),
+            title: payload.title,
+            logline: payload.logline,
+            location: payload.location,
+            start: payload.start,
+            end: payload.end,
+            days: payload.days,
+            totalCost: total,
+            reservedCredits: total,
+            status: "recruiting",
+            roles: payload.roleIds.map((roleId, index) => {
+              const crewName = CREW_NAMES[index % CREW_NAMES.length];
+              const accountId = uniqueId("crew");
+              state.crewAccounts[accountId] = { id: accountId, name: crewName, balance: 0 };
+              return { id: uniqueId("slot"), roleId, crewAccountId: accountId, status: "held" };
+            })
+          };
+          state.projects.unshift(project);
+          addLedger({
+            title: "Shoot Posted",
+            detail: `${project.title} · ${project.roles.length} ${project.roles.length === 1 ? "position" : "positions"} · ${project.days} ${project.days === 1 ? "day" : "days"}`,
+            amount: -total,
+            tone: "standard"
+          });
+          return { project, message: `Shoot posted. ${credits(total)} have been reserved.` };
+        }
+
+        if (segments[0] === "projects") {
+          const project = state.projects.find(item => item.id === segments[1]);
+          const action = segments[2];
+          if (!project) throw new Error("This project could not be found.");
+
+          if (action === "confirm") {
+            if (project.status !== "recruiting") throw new Error("This project is no longer recruiting.");
+            const slot = project.roles.find(item => item.id === payload.slotId);
+            if (!slot || slot.status !== "held") throw new Error("This crew slot cannot be confirmed.");
+            const slotTotal = projectRoleTotal(project, slot);
+            const backedTotal = project.roles.filter(item => item.status !== "settled").reduce((sum, item) => sum + projectRoleTotal(project, item), 0);
+            if (project.reservedCredits < backedTotal || project.reservedCredits < slotTotal) {
+              throw new Error(`${credits(slotTotal)} are required to confirm this crew slot.`);
+            }
+            slot.status = "confirmed";
+            return { message: `${state.crewAccounts[slot.crewAccountId].name} confirmed for ${roleById(slot.roleId).name}.` };
+          }
+
+          if (action === "complete") {
+            if (project.status !== "recruiting") throw new Error("This project cannot be completed.");
+            if (project.roles.some(slot => slot.status !== "confirmed")) throw new Error("Confirm every crew slot before marking this shoot complete.");
+            if (project.reservedCredits !== project.totalCost) throw new Error("The reserved Credits total does not match this project.");
+
+            project.roles.forEach(slot => {
+              state.crewAccounts[slot.crewAccountId].balance += projectRoleTotal(project, slot);
+              slot.status = "settled";
+            });
+            project.reservedCredits = 0;
+            project.status = "completed";
+            addLedger({
+              title: "Shoot Completed",
+              detail: `${project.title} · ${credits(project.totalCost)} released to ${project.roles.length} crew ${project.roles.length === 1 ? "account" : "accounts"}`,
+              amount: 0,
+              tone: "positive"
+            });
+            return { message: `${project.title} completed. ${credits(project.totalCost)} released to crew.` };
+          }
+
+          if (action === "cancel") {
+            if (project.status === "cancelled") throw new Error("This late cancellation has already been routed.");
+            if (project.status === "completed") throw new Error("A completed shoot cannot be cancelled.");
+            if (project.reservedCredits !== project.totalCost) throw new Error("The reserved Credits total does not match this project.");
+
+            const penalty = project.totalCost / 2;
+            const returned = project.totalCost - penalty;
+            project.roles.forEach(slot => {
+              state.crewAccounts[slot.crewAccountId].balance += projectRoleTotal(project, slot) / 2;
+              slot.status = "cancelled";
+            });
+            state.profile.balance += returned;
+            project.reservedCredits = 0;
+            project.status = "cancelled";
+            addLedger({
+              title: "Late Cancellation Penalty",
+              detail: `${project.title} · ${credits(penalty)} routed to crew · ${credits(returned)} returned`,
+              amount: returned,
+              tone: "danger"
+            });
+            return { message: `Late cancellation routed. ${credits(penalty)} moved to crew and ${credits(returned)} returned to your balance.` };
+          }
+        }
+
+        throw new Error("This demo route is unavailable.");
+      }
+    };
+
+    function profileRole() {
+      return roleById(state.profile.roleId);
+    }
+
+    function renderDashboard() {
+      const dashboard = document.getElementById("dashboard-content");
+      const role = profileRole();
+      const reserved = state.projects.reduce((sum, project) => sum + (project.reservedCredits || 0), 0);
+      const completedDays = state.profile.completedDays;
+      const isAvailable = state.profile.available !== false;
+
+      dashboard.innerHTML = `
+        <div class="px-5 pb-5 pt-7">
+          <div class="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h1 id="dashboard-title" tabindex="-1" class="text-[2rem] font-black leading-none tracking-[-.055em] text-bone">Dashboard</h1>
+              <p class="mt-2 text-sm text-mist">Good afternoon, ${escapeHtml(state.profile.firstName)}.</p>
+            </div>
+            <button type="button" data-action="toggle-availability" class="availability-badge ${isAvailable ? "" : "is-unavailable"} min-h-11 rounded-full border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.16em] transition active:scale-[.98] disabled:opacity-45" aria-pressed="${String(!isAvailable)}" aria-label="${isAvailable ? "Set status to Not Available" : "Set status to Available"}" ${busyAction ? "disabled" : ""}><span class="availability-dot mr-1 inline-block h-1.5 w-1.5 rounded-full"></span>${isAvailable ? "Available" : "Not Available"}</button>
+          </div>
+
+          <article class="balance-grid balance-card-accent ${state.profile.balance < 0 ? "is-negative" : ""} relative overflow-hidden rounded-[28px] border bg-[#17110f] p-5">
+            <div class="balance-card-halo absolute -right-8 -top-9 h-28 w-28 rounded-full blur-2xl"></div>
+            <div class="relative">
+              <div class="mb-7 flex items-start justify-between gap-3">
+                <p class="eyebrow balance-card-tone">Available Credits</p>
+                <i class="fa-solid fa-wave-square balance-card-tone" aria-hidden="true"></i>
+              </div>
+              <p class="tabular mt-1 text-[25px] font-black leading-none tracking-[-.055em]"><span class="text-bone">Your Balance: </span><span class="balance-card-tone">${credits(state.profile.balance)}</span></p>
+              <p class="mt-3 text-sm text-mist">Ready for the next call sheet.</p>
+              <div class="mt-5 grid grid-cols-2 gap-2 border-t border-signal/10 pt-4">
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[.14em] text-mist">Reserved</p>
+                  <p class="tabular mt-1 text-sm font-black text-bone">${credits(reserved)}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-bold uppercase tracking-[.14em] text-mist">Crew days completed</p>
+                  <p class="tabular mt-1 text-sm font-black text-bone">${completedDays} ${completedDays === 1 ? "day" : "days"}</p>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="px-5">
+          <article class="panel rounded-3xl p-4">
+            <div class="flex items-center gap-3">
+              <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-[#161e21] text-sm font-black text-signal">${escapeHtml(state.profile.initials)}</div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-base font-extrabold text-bone">${escapeHtml(state.profile.name)}</p>
+                <p class="mt-0.5 truncate text-xs text-mist"><i class="fa-solid fa-location-dot mr-1.5 text-signal/70" aria-hidden="true"></i>${escapeHtml(state.profile.location)}</p>
+              </div>
+              <span class="rounded-xl border hairline bg-white/[.035] px-2.5 py-2 text-[10px] font-extrabold uppercase tracking-[.12em] text-mist">Verified</span>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2 border-t hairline pt-4">
+              <div class="rounded-2xl bg-black/20 p-3">
+                <p class="text-[9px] font-bold uppercase tracking-[.15em] text-mist">Core department</p>
+                <p class="mt-1.5 text-xs font-bold leading-4 text-bone">${escapeHtml(state.profile.department)}</p>
+              </div>
+              <div class="rounded-2xl bg-black/20 p-3">
+                <p class="text-[9px] font-bold uppercase tracking-[.15em] text-mist">Primary role</p>
+                <p class="mt-1.5 text-xs font-bold leading-4 text-bone">${escapeHtml(role.name)}</p>
+                <p class="tabular mt-1 text-[10px] font-extrabold text-signal">${credits(role.rate, true)}</p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="mt-8 px-5">
+          <div class="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <p class="eyebrow mb-2 text-mist">Production desk</p>
+              <h2 class="text-xl font-black tracking-[-.035em] text-bone">Your shoots</h2>
+            </div>
+            <button type="button" data-nav="post" class="min-h-11 rounded-xl px-2 text-xs font-extrabold text-signal">Post new <i class="fa-solid fa-arrow-right ml-1" aria-hidden="true"></i></button>
+          </div>
+          <div id="user-projects" class="space-y-3">${renderUserProjects()}</div>
+        </div>
+
+        <div class="mt-9 px-5">
+          <div class="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p class="eyebrow mb-2 text-mist">Traceable by design</p>
+              <h2 class="text-xl font-black tracking-[-.035em] text-bone">Ledger activity</h2>
+              <p class="mt-1 text-xs leading-4 text-mist">Every commitment, completion and adjustment in one place.</p>
+            </div>
+            <button type="button" data-action="reset-demo" class="min-h-11 shrink-0 rounded-xl px-2 text-[11px] font-bold text-mist transition hover:text-bone">Reset demo</button>
+          </div>
+          <div class="space-y-0">${renderLedger()}</div>
+        </div>
+      `;
+    }
+
+    function renderHeaderBalance() {
+      const balance = credits(state.profile.balance);
+      compactHeaderBalanceValue.textContent = balance;
+      compactHeaderBalance.setAttribute("aria-label", `Current balance: ${balance}`);
+    }
+
+    function renderUserProjects() {
+      if (!state.projects.length) {
+        return `
+          <button type="button" data-nav="post" class="panel flex min-h-[112px] w-full items-center gap-4 rounded-3xl p-4 text-left transition hover:border-signal/30">
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-dashed border-signal/30 bg-signal/[.06] text-signal"><i class="fa-solid fa-plus" aria-hidden="true"></i></span>
+            <span>
+              <span class="block text-sm font-extrabold text-bone">Build your first crew</span>
+              <span class="mt-1 block text-xs leading-5 text-mist">Choose from the complete BECTU fixed Credits matrix, preview the full commitment, and publish.</span>
+            </span>
+          </button>
+        `;
+      }
+
+      return state.projects.map(project => {
+        const allConfirmed = project.roles.every(slot => slot.status === "confirmed");
+        const isClosed = project.status !== "recruiting";
+        const statusLabel = project.status === "recruiting" ? "Recruiting" : project.status === "completed" ? "Completed" : "Cancelled";
+        const statusClass = project.status === "recruiting" ? "text-signal border-signal/20 bg-signal/[.07]" : project.status === "completed" ? "text-bone border-white/10 bg-white/[.04]" : "text-danger border-danger/20 bg-danger/[.07]";
+
+        return `
+          <article class="panel rounded-3xl p-4 ${project.status === "cancelled" ? "border-danger/20" : ""}">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-[10px] font-extrabold uppercase tracking-[.15em] text-mist">${escapeHtml(project.location)} · ${escapeHtml(dateRange(project.start, project.end))}</p>
+                <h3 class="mt-2 truncate text-lg font-black tracking-[-.025em] text-bone">${escapeHtml(project.title)}</h3>
+              </div>
+              <span class="shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[.12em] ${statusClass}">${statusLabel}</span>
+            </div>
+            <p class="mt-2 line-clamp-2 text-xs leading-5 text-mist">${escapeHtml(project.logline)}</p>
+
+            <div class="mt-4 space-y-2">
+              ${project.roles.map(slot => {
+                const role = roleById(slot.roleId);
+                const crew = state.crewAccounts[slot.crewAccountId];
+                const slotTotal = projectRoleTotal(project, slot);
+                const slotState = slot.status === "held" ? "Held" : slot.status === "confirmed" ? "Confirmed" : slot.status === "settled" ? "Settled" : "Cancelled";
+                return `
+                  <div class="rounded-2xl border hairline bg-black/20 p-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-xs font-extrabold leading-4 text-bone">${escapeHtml(role.name)}</p>
+                        <p class="mt-1 text-[10px] text-mist">${escapeHtml(crew.name)} · ${slotState}</p>
+                      </div>
+                      <span class="tabular shrink-0 text-[10px] font-extrabold text-signal">${credits(slotTotal)}</span>
+                    </div>
+                    ${slot.status === "held" && !isClosed ? `
+                      <button type="button" data-action="confirm-slot" data-project-id="${project.id}" data-slot-id="${slot.id}" class="mt-3 min-h-11 w-full rounded-xl border border-signal/20 bg-signal/[.07] px-3 text-xs font-extrabold text-signal transition hover:bg-signal/[.12] disabled:opacity-45" ${busyAction ? "disabled" : ""}>
+                        ${busyAction === `confirm-slot:${slot.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Confirming' : '<i class="fa-solid fa-user-check mr-2" aria-hidden="true"></i>Confirm Crew Slot'}
+                      </button>
+                    ` : ""}
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <div class="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/[.035] p-3">
+              <span class="text-[10px] font-bold uppercase tracking-[.13em] text-mist">Reserved total</span>
+              <span class="tabular text-sm font-black text-bone">${credits(project.reservedCredits)}</span>
+            </div>
+
+            <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button type="button" data-action="complete-project" data-project-id="${project.id}" class="min-h-12 rounded-2xl bg-signal px-3 text-xs font-black text-[#21100d] transition hover:bg-[#ffb7ad] disabled:cursor-not-allowed disabled:opacity-40" ${isClosed || !allConfirmed || busyAction ? "disabled" : ""}>
+                ${busyAction === `complete-project:${project.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Completing' : '<i class="fa-solid fa-check mr-2" aria-hidden="true"></i>Mark Shoot Complete'}
+              </button>
+              <button type="button" data-action="cancel-project" data-project-id="${project.id}" class="min-h-12 rounded-2xl border border-danger/25 bg-danger/[.055] px-3 text-xs font-extrabold text-[#ff9da6] transition hover:bg-danger/[.1] disabled:cursor-not-allowed disabled:opacity-40" ${isClosed || busyAction ? "disabled" : ""}>
+                ${busyAction === `cancel-project:${project.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Routing' : '<i class="fa-solid fa-triangle-exclamation mr-2" aria-hidden="true"></i>Cancel Shoot (&lt;48h Notice)'}
+              </button>
+            </div>
+            ${!isClosed ? `<p class="mt-2 text-[10px] leading-4 text-mist">50% of every role total routes directly to the held crew accounts.</p>` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderLedger() {
+      return state.ledger.map(item => {
+        const isDanger = item.tone === "danger";
+        const isPositive = item.amount > 0;
+        const valueClass = isPositive ? "balance-teal" : item.amount < 0 ? "text-signal" : "text-mist";
+        const icon = isDanger ? "fa-triangle-exclamation" : isPositive ? "fa-arrow-down" : item.amount < 0 ? "fa-arrow-up" : "fa-check";
+        const value = item.amount === 0 ? "0 Credits · Settled" : signedCredits(item.amount);
+        return `
+          <article class="timeline-item relative flex gap-3 pb-4">
+            <span class="relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full border ${isDanger ? "border-signal/30 bg-[#21100d] text-signal" : "hairline bg-panel text-mist"}">
+              <i class="fa-solid ${icon} text-[10px]" aria-hidden="true"></i>
+            </span>
+            <div class="min-w-0 flex-1 rounded-2xl border p-3 ${isDanger ? "ledger-penalty" : "hairline bg-white/[.018]"}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-xs font-extrabold text-bone">${escapeHtml(item.title)}</p>
+                  <p class="mt-1 text-[10px] font-bold uppercase tracking-[.12em] ${isDanger ? "text-signal/80" : "text-mist"}">${escapeHtml(dateLabel(item.date, { day: "numeric", month: "short", year: "numeric" }))}</p>
+                </div>
+                <span class="tabular shrink-0 text-xs font-black ${valueClass}">${value}</span>
+              </div>
+              <p class="mt-2 text-[11px] leading-4 text-mist">${escapeHtml(item.detail)}</p>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderFilters() {
+      const filters = [{ id: "all", name: "All" }, ...CREDIT_MATRIX];
+      document.getElementById("department-filters").innerHTML = filters.map(filter => `
+        <button type="button" data-department="${filter.id}" class="min-h-11 shrink-0 rounded-full border px-4 text-xs font-extrabold transition ${currentDepartment === filter.id ? "border-signal/30 bg-signal/[.1] text-signal" : "hairline bg-panel text-mist hover:text-bone"}" aria-pressed="${currentDepartment === filter.id}">
+          ${escapeHtml(filter.name)}
+        </button>
+      `).join("");
+    }
+
+    function renderJobs() {
+      const query = document.getElementById("job-search").value.trim().toLowerCase();
+      const visibleJobs = state.jobs.filter(job => {
+        const role = roleById(job.roleId);
+        const matchesDepartment = currentDepartment === "all" || role.departmentId === currentDepartment;
+        const haystack = `${job.title} ${job.location} ${job.company} ${role.name}`.toLowerCase();
+        return matchesDepartment && haystack.includes(query);
+      });
+      const openCount = state.jobs.filter(job => job.status === "open").length;
+      document.getElementById("job-count").textContent = `${openCount} open`;
+
+      const list = document.getElementById("job-list");
+      if (!visibleJobs.length) {
+        list.innerHTML = `
+          <div class="panel rounded-3xl p-7 text-center">
+            <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/[.04] text-mist"><i class="fa-solid fa-binoculars" aria-hidden="true"></i></span>
+            <h2 class="mt-4 text-base font-black text-bone">No matching open calls</h2>
+            <p class="mt-2 text-xs leading-5 text-mist">Try another title, role, city, or department.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = visibleJobs.map(job => {
+        const role = roleById(job.roleId);
+        const days = inclusiveDays(job.start, job.end);
+        const total = jobTotal(job);
+        const penalty = total / 2;
+        const isClosed = job.status !== "open";
+        const statusLabel = job.status === "cancelled" ? "Shoot cancelled" : job.status === "completed" ? "Completed" : "Open call";
+        const statusClass = job.status === "cancelled" ? "border-danger/20 bg-danger/[.07] text-danger" : job.status === "completed" ? "hairline bg-white/[.04] text-bone" : "border-signal/20 bg-signal/[.07] text-signal";
+
+        let primaryButton = "";
+        if (job.status === "open" && !job.applicationStatus) {
+          primaryButton = `<button type="button" data-action="apply-job" data-job-id="${job.id}" class="min-h-12 rounded-2xl bg-signal px-3 text-xs font-black text-[#21100d] transition hover:bg-[#ffb7ad] disabled:opacity-45" ${busyAction ? "disabled" : ""}>${busyAction === `apply-job:${job.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Sending' : '<i class="fa-solid fa-paper-plane mr-2" aria-hidden="true"></i>Apply to Crew'}</button>`;
+        } else if (job.status === "open" && job.applicationStatus === "applied") {
+          primaryButton = `<button type="button" data-action="confirm-job" data-job-id="${job.id}" class="min-h-12 rounded-2xl bg-signal px-3 text-xs font-black text-[#21100d] transition hover:bg-[#ffb7ad] disabled:opacity-45" ${busyAction ? "disabled" : ""}>${busyAction === `confirm-job:${job.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Checking' : '<i class="fa-solid fa-user-check mr-2" aria-hidden="true"></i>Confirm Crew Slot'}</button>`;
+        } else if (job.status === "open" && job.applicationStatus === "confirmed") {
+          primaryButton = `<button type="button" data-action="complete-job" data-job-id="${job.id}" class="min-h-12 rounded-2xl bg-signal px-3 text-xs font-black text-[#21100d] transition hover:bg-[#ffb7ad] disabled:opacity-45" ${busyAction ? "disabled" : ""}>${busyAction === `complete-job:${job.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Completing' : '<i class="fa-solid fa-check mr-2" aria-hidden="true"></i>Mark Work Complete'}</button>`;
+        } else {
+          primaryButton = `<button type="button" class="min-h-12 rounded-2xl border hairline bg-white/[.025] px-3 text-xs font-extrabold text-mist" disabled><i class="fa-solid ${job.status === "completed" ? "fa-circle-check" : "fa-ban"} mr-2" aria-hidden="true"></i>${job.status === "completed" ? "Credits Received" : "Applications Closed"}</button>`;
+        }
+
+        return `
+          <article class="panel overflow-hidden rounded-[26px] ${job.status === "cancelled" ? "border-danger/20" : ""}">
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-3">
+                <span class="rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-[.14em] ${statusClass}">${statusLabel}</span>
+                <span class="text-[10px] font-bold uppercase tracking-[.12em] text-mist">${days} ${days === 1 ? "day" : "days"}</span>
+              </div>
+              <h2 class="mt-4 text-[1.3rem] font-black tracking-[-.035em] text-bone">${escapeHtml(job.title)}</h2>
+              <p class="mt-1 text-xs text-mist">${escapeHtml(job.company)} · ${escapeHtml(job.format)}</p>
+
+              <div class="mt-4 rounded-2xl border hairline bg-black/25 p-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-[9px] font-bold uppercase tracking-[.14em] text-mist">Role needed</p>
+                    <p class="mt-1.5 text-sm font-extrabold leading-5 text-bone">${escapeHtml(role.name)}</p>
+                  </div>
+                  <span class="tabular max-w-[128px] shrink-0 rounded-xl border border-signal/20 bg-signal/[.08] px-2.5 py-2 text-right text-[10px] font-black leading-4 text-signal">Earns ${credits(role.rate, true)}</span>
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+                <div class="rounded-xl bg-white/[.025] p-3 text-mist"><i class="fa-solid fa-location-dot mr-2 text-signal/70" aria-hidden="true"></i>${escapeHtml(job.location)}</div>
+                <div class="rounded-xl bg-white/[.025] p-3 text-mist"><i class="fa-regular fa-calendar mr-2 text-signal/70" aria-hidden="true"></i>${escapeHtml(dateRange(job.start, job.end))}</div>
+              </div>
+
+              ${job.applicationStatus && job.status === "open" ? `
+                <div class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-signal/15 bg-signal/[.045] px-3 py-2.5 text-[10px]">
+                  <span class="font-bold text-signal"><i class="fa-solid fa-circle-check mr-1.5" aria-hidden="true"></i>${job.applicationStatus === "applied" ? "Application sent" : "Crew confirmed"}</span>
+                  <span class="tabular text-mist">Protected: ${credits(job.reservedCredits)}</span>
+                </div>
+              ` : ""}
+
+              <div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                ${primaryButton}
+                <button type="button" data-action="cancel-job" data-job-id="${job.id}" class="min-h-12 rounded-2xl border border-danger/25 bg-danger/[.055] px-3 text-xs font-extrabold text-[#ff9da6] transition hover:bg-danger/[.1] disabled:cursor-not-allowed disabled:opacity-40" ${isClosed || busyAction ? "disabled" : ""}>
+                  ${busyAction === `cancel-job:${job.id}` ? '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Routing' : '<i class="fa-solid fa-triangle-exclamation mr-2" aria-hidden="true"></i>Cancel Shoot (&lt;48h Notice)'}
+                </button>
+              </div>
+            </div>
+
+            <div class="border-t hairline bg-black/20 px-4 py-3 text-[10px] leading-4 text-mist">
+              <div class="flex items-center justify-between gap-3">
+                <span>Creator test balance</span>
+                <span class="tabular font-extrabold text-bone">${credits(job.creator.balance)}</span>
+              </div>
+              <p class="mt-1.5">Late cancellation routes ${credits(penalty)} directly to ${escapeHtml(state.profile.name)}.</p>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderRoleOptions(search = "") {
+      const query = search.trim().toLowerCase();
+      const container = document.getElementById("role-options");
+      const departments = CREDIT_MATRIX.map(department => ({
+        ...department,
+        roles: department.name.toLowerCase().includes(query)
+          ? department.roles
+          : department.roles.filter(role => role.name.toLowerCase().includes(query))
+      })).filter(department => department.roles.length);
+
+      if (!departments.length) {
+        container.innerHTML = `<p class="p-5 text-center text-xs leading-5 text-mist">No crew positions match this search.</p>`;
+        return;
+      }
+
+      container.innerHTML = departments.map(department => `
+        <fieldset class="mb-4 last:mb-0">
+          <legend class="sticky top-0 z-10 flex w-full items-center gap-2 bg-[#0c1012]/95 px-2 py-2 text-[9px] font-black uppercase tracking-[.15em] text-signal backdrop-blur">
+            <i class="fa-solid ${department.icon}" aria-hidden="true"></i>${escapeHtml(department.name)}
+          </legend>
+          <div class="space-y-1">
+            ${department.roles.map(role => `
+              <label class="choice-row flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 transition hover:bg-white/[.03]">
+                <input type="checkbox" name="crew-role" value="${role.id}" class="sr-only" ${selectedRoles.has(role.id) ? "checked" : ""}>
+                <span class="choice-check grid h-5 w-5 shrink-0 place-items-center rounded-md border hairline bg-white/[.035] text-[9px] text-transparent"><i class="fa-solid fa-check" aria-hidden="true"></i></span>
+                <span class="min-w-0 flex-1 text-xs font-bold leading-4 text-bone">${escapeHtml(role.name)}</span>
+                <span class="tabular shrink-0 text-[10px] font-extrabold text-signal">${credits(role.rate, true)}</span>
+              </label>
+            `).join("")}
+          </div>
+        </fieldset>
+      `).join("");
+    }
+
+    function currentEstimate() {
+      const start = document.getElementById("project-start").value;
+      const end = document.getElementById("project-end").value;
+      const days = inclusiveDays(start, end);
+      const daily = [...selectedRoles].reduce((sum, roleId) => sum + roleById(roleId).rate, 0);
+      return { days, daily, total: days * daily };
+    }
+
+    function renderEstimate() {
+      const { days, daily, total } = currentEstimate();
+      const label = document.getElementById("role-trigger-label");
+      const chips = document.getElementById("selected-role-chips");
+      const trigger = document.getElementById("role-trigger");
+      const over = total > state.profile.balance;
+
+      label.textContent = selectedRoles.size ? `${selectedRoles.size} ${selectedRoles.size === 1 ? "position" : "positions"} selected` : "Choose crew positions";
+      trigger.classList.toggle("border-signal/40", selectedRoles.size > 0);
+      document.getElementById("estimate-total").textContent = `Estimated Cost: ${credits(total)}`;
+      document.getElementById("estimate-total").className = `tabular text-2xl font-black tracking-[-.04em] ${over ? "text-danger" : "text-bone"}`;
+      document.getElementById("estimate-balance").textContent = credits(state.profile.balance);
+      document.getElementById("estimate-balance").className = `tabular font-extrabold ${over ? "text-danger" : "text-signal"}`;
+
+      if (days && selectedRoles.size) {
+        document.getElementById("estimate-breakdown").textContent = `${days} shoot ${days === 1 ? "day" : "days"} × ${credits(daily, true)}`;
+      } else if (selectedRoles.size) {
+        document.getElementById("estimate-breakdown").textContent = `${credits(daily, true)} selected · choose valid dates.`;
+      } else {
+        document.getElementById("estimate-breakdown").textContent = "Choose dates and crew positions.";
+      }
+
+      chips.innerHTML = [...selectedRoles].map(roleId => {
+        const role = roleById(roleId);
+        return `<button type="button" data-remove-role="${role.id}" class="min-h-11 rounded-full border border-signal/20 bg-signal/[.07] px-3 text-[10px] font-extrabold text-signal">${escapeHtml(role.name)} <i class="fa-solid fa-xmark ml-1.5" aria-hidden="true"></i><span class="sr-only">Remove</span></button>`;
+      }).join("");
+
+      announce(`Estimated Cost: ${credits(total)}.`);
+    }
+
+    function renderAll() {
+      renderHeaderBalance();
+      renderDashboard();
+      renderFilters();
+      renderJobs();
+      renderEstimate();
+    }
+
+    function navigate(view, focusHeading = true) {
+      currentView = view;
+      document.querySelectorAll("[data-view]").forEach(section => {
+        section.hidden = section.dataset.view !== view;
+      });
+      document.querySelectorAll(".nav-button").forEach(button => {
+        button.setAttribute("aria-selected", String(button.dataset.nav === view));
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (focusHeading) {
+        const heading = document.querySelector(`#view-${view} h1`);
+        requestAnimationFrame(() => heading?.focus({ preventScroll: true }));
+      }
+    }
+
+    function showFormMessage(message, type = "danger") {
+      const box = document.getElementById("form-message");
+      box.hidden = false;
+      box.className = `rounded-2xl border px-4 py-3 text-sm leading-5 ${type === "danger" ? "border-danger/30 bg-danger/[.07] text-[#ffc4ca]" : "border-signal/25 bg-signal/[.07] text-signal"}`;
+      box.innerHTML = `<i class="fa-solid ${type === "danger" ? "fa-triangle-exclamation" : "fa-circle-check"} mr-2" aria-hidden="true"></i>${escapeHtml(message)}`;
+      announce(message);
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function clearFormMessage() {
+      const box = document.getElementById("form-message");
+      box.hidden = true;
+      box.textContent = "";
+    }
+
+    async function runAction(key, operation) {
+      if (busyAction) return;
+      busyAction = key;
+      renderAll();
+      try {
+        const result = await operation();
+        saveState();
+        showToast(result.message);
+      } catch (error) {
+        showToast(error.message, "danger");
+      } finally {
+        busyAction = "";
+        renderAll();
+      }
+    }
+
+    document.addEventListener("click", event => {
+      const nav = event.target.closest("[data-nav]");
+      if (nav) {
+        navigate(nav.dataset.nav);
+        return;
+      }
+
+      const filter = event.target.closest("[data-department]");
+      if (filter) {
+        currentDepartment = filter.dataset.department;
+        renderFilters();
+        renderJobs();
+        return;
+      }
+
+      const removeRole = event.target.closest("[data-remove-role]");
+      if (removeRole) {
+        selectedRoles.delete(removeRole.dataset.removeRole);
+        renderRoleOptions(document.getElementById("role-search").value);
+        renderEstimate();
+        return;
+      }
+
+      const actionButton = event.target.closest("[data-action]");
+      if (!actionButton) return;
+      const action = actionButton.dataset.action;
+
+      if (action === "apply-job") {
+        runAction(`apply-job:${actionButton.dataset.jobId}`, () => mockDatabase.request(`/jobs/${actionButton.dataset.jobId}/apply`));
+      } else if (action === "confirm-job") {
+        runAction(`confirm-job:${actionButton.dataset.jobId}`, () => mockDatabase.request(`/jobs/${actionButton.dataset.jobId}/confirm`));
+      } else if (action === "complete-job") {
+        runAction(`complete-job:${actionButton.dataset.jobId}`, () => mockDatabase.request(`/jobs/${actionButton.dataset.jobId}/complete`));
+      } else if (action === "cancel-job") {
+        runAction(`cancel-job:${actionButton.dataset.jobId}`, () => mockDatabase.request(`/jobs/${actionButton.dataset.jobId}/cancel`));
+      } else if (action === "confirm-slot") {
+        runAction(`confirm-slot:${actionButton.dataset.slotId}`, () => mockDatabase.request(`/projects/${actionButton.dataset.projectId}/confirm`, { slotId: actionButton.dataset.slotId }));
+      } else if (action === "complete-project") {
+        runAction(`complete-project:${actionButton.dataset.projectId}`, () => mockDatabase.request(`/projects/${actionButton.dataset.projectId}/complete`));
+      } else if (action === "cancel-project") {
+        runAction(`cancel-project:${actionButton.dataset.projectId}`, () => mockDatabase.request(`/projects/${actionButton.dataset.projectId}/cancel`));
+      } else if (action === "toggle-availability") {
+        runAction("toggle-availability", () => mockDatabase.request("/profile/availability", { available: state.profile.available === false }));
+      } else if (action === "reset-demo") {
+        if (window.confirm("Reset demo activity and return to 505 Credits?")) {
+          state = initialState();
+          selectedRoles.clear();
+          renderRoleOptions();
+          localStorage.removeItem(STORAGE_KEY);
+          renderAll();
+          showToast("Demo reset. Your balance is 505 Credits.");
+        }
+      }
+    });
+
+    document.getElementById("job-search").addEventListener("input", renderJobs);
+
+    document.getElementById("role-trigger").addEventListener("click", () => {
+      const panel = document.getElementById("role-panel");
+      const trigger = document.getElementById("role-trigger");
+      const opening = panel.classList.contains("hidden");
+      panel.classList.toggle("hidden", !opening);
+      trigger.setAttribute("aria-expanded", String(opening));
+      trigger.querySelector("i").classList.toggle("rotate-180", opening);
+      if (opening) requestAnimationFrame(() => document.getElementById("role-search").focus());
+    });
+
+    document.getElementById("role-search").addEventListener("input", event => renderRoleOptions(event.target.value));
+
+    document.getElementById("role-options").addEventListener("change", event => {
+      const checkbox = event.target.closest('input[name="crew-role"]');
+      if (!checkbox) return;
+      if (checkbox.checked) selectedRoles.add(checkbox.value);
+      else selectedRoles.delete(checkbox.value);
+      renderRoleOptions(document.getElementById("role-search").value);
+      renderEstimate();
+    });
+
+    document.getElementById("clear-roles").addEventListener("click", () => {
+      selectedRoles.clear();
+      renderRoleOptions(document.getElementById("role-search").value);
+      renderEstimate();
+    });
+
+    ["project-start", "project-end"].forEach(id => {
+      document.getElementById(id).addEventListener("change", () => {
+        if (id === "project-start") document.getElementById("project-end").min = document.getElementById("project-start").value || "2026-09-14";
+        renderEstimate();
+      });
+    });
+
+    document.getElementById("shoot-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      clearFormMessage();
+      const title = document.getElementById("project-title").value.trim();
+      const logline = document.getElementById("project-logline").value.trim();
+      const location = document.getElementById("project-location").value.trim();
+      const start = document.getElementById("project-start").value;
+      const end = document.getElementById("project-end").value;
+      const estimate = currentEstimate();
+
+      if (!title) return showFormMessage("Add a project title.");
+      if (!logline) return showFormMessage("Add a project logline.");
+      if (!location) return showFormMessage("Add a shoot location.");
+      if (!start || !end) return showFormMessage("Choose both shoot dates.");
+      if (start < "2026-09-14") return showFormMessage("Choose a first shoot day on or after 14 September 2026.");
+      if (!estimate.days) return showFormMessage("Choose an end date on or after the start date.");
+      if (!selectedRoles.size) return showFormMessage("Choose at least one crew position.");
+      if (estimate.total > state.profile.balance) {
+        return showFormMessage(`You need ${credits(estimate.total - state.profile.balance)} more to post this shoot. Remove a role or complete work first.`);
+      }
+
+      const button = document.getElementById("post-submit");
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2" aria-hidden="true"></i>Posting Shoot';
+      try {
+        const result = await mockDatabase.request("/projects", {
+          action: "create",
+          title,
+          logline,
+          location,
+          start,
+          end,
+          days: estimate.days,
+          roleIds: [...selectedRoles],
+          total: estimate.total
+        });
+        saveState();
+        event.target.reset();
+        selectedRoles.clear();
+        document.getElementById("project-end").min = "2026-09-14";
+        document.getElementById("role-search").value = "";
+        document.getElementById("role-panel").classList.add("hidden");
+        document.getElementById("role-trigger").setAttribute("aria-expanded", "false");
+        document.getElementById("role-trigger").querySelector("i").classList.remove("rotate-180");
+        renderRoleOptions();
+        renderAll();
+        navigate("dashboard");
+        showToast(result.message);
+      } catch (error) {
+        showFormMessage(error.message);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fa-solid fa-bullhorn mr-2" aria-hidden="true"></i>Post Shoot';
+      }
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        const panel = document.getElementById("role-panel");
+        if (!panel.classList.contains("hidden")) {
+          panel.classList.add("hidden");
+          const trigger = document.getElementById("role-trigger");
+          trigger.setAttribute("aria-expanded", "false");
+          trigger.querySelector("i").classList.remove("rotate-180");
+          trigger.focus();
+        }
+      }
+    });
+
+    const appHeader = document.getElementById("app-header");
+    const titleLogoImage = appHeader.querySelector(".title-logo-image");
+    const compactHeaderBalance = document.getElementById("compact-header-balance");
+    const compactHeaderBalanceValue = document.getElementById("compact-header-balance-value");
+    const useIOSLogoMotion =
+      typeof titleLogoImage.animate === "function" &&
+      (window.matchMedia("(hover: none), (pointer: coarse)").matches || navigator.maxTouchPoints > 0);
+    document.documentElement.classList.toggle("touch-logo-motion", useIOSLogoMotion);
+    let headerIsScrolled = false;
+    let logoAnimation = null;
+    let logoSyncPending = false;
+
+    function syncHeaderToScroll() {
+      const scrollTop = Math.max(0, window.scrollY || document.documentElement.scrollTop || 0);
+      const shouldShrink = headerIsScrolled
+        ? scrollTop > (useIOSLogoMotion ? 1 : 0)
+        : scrollTop > (useIOSLogoMotion ? 6 : 1);
+
+      if (useIOSLogoMotion && logoAnimation && shouldShrink !== headerIsScrolled) {
+        logoSyncPending = true;
+        return;
+      }
+
+      if (shouldShrink !== headerIsScrolled) {
+        logoSyncPending = false;
+        const previousVisualWidth = useIOSLogoMotion
+          ? titleLogoImage.getBoundingClientRect().width
+          : 0;
+
+        if (logoAnimation) {
+          logoAnimation.cancel();
+          logoAnimation = null;
+        }
+
+        headerIsScrolled = shouldShrink;
+        appHeader.classList.toggle("is-scrolled", shouldShrink);
+        compactHeaderBalance.setAttribute("aria-hidden", String(!shouldShrink));
+
+        if (useIOSLogoMotion) {
+          const finalWidth = titleLogoImage.getBoundingClientRect().width;
+          const startingScale = finalWidth > 0 ? previousVisualWidth / finalWidth : 1;
+
+          if (Math.abs(startingScale - 1) > 0.01) {
+            const animation = titleLogoImage.animate(
+              [
+                { transform: `scale(${startingScale})` },
+                { transform: "scale(1)" }
+              ],
+              {
+                duration: 100,
+                easing: "cubic-bezier(0.2, 0.8, 0.2, 1)"
+              }
+            );
+
+            logoAnimation = animation;
+            animation.onfinish = () => {
+              if (logoAnimation === animation) {
+                logoAnimation = null;
+                if (logoSyncPending) {
+                  logoSyncPending = false;
+                  syncHeaderToScroll();
+                }
+              }
+            };
+            animation.oncancel = () => {
+              if (logoAnimation === animation) {
+                logoAnimation = null;
+                logoSyncPending = false;
+              }
+            };
+          }
+        }
+      }
+    }
+
+    window.addEventListener("scroll", syncHeaderToScroll, { passive: true });
+
+    renderRoleOptions();
+    renderAll();
+    navigate("dashboard", false);
+    syncHeaderToScroll();
+  </script>
+</body>
+</html>
